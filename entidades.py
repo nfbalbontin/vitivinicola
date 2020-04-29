@@ -40,25 +40,32 @@ class Lote:
     
          
 class Uva:
-    def __init__(self, nu, min_ferm, max_ferm, brix):
+    def __init__(self, tipo, nu, min_ferm, max_ferm, brix, min_opt, max_opt):
         """
         nu: parametro de perdida de calidad 
         min: minimo tiempo de fermentacion 
         max: maximo tiempo de fermentacion 
-        brix: el brix de cada uva 
+        brix: el brix de cada uva
+        min_opt: 7 dias antes del dia de cosecha optimo 
+        max_opt: 7 dias despues del dia de cosecha optimo 
         """
+        self.tipo = tipo 
         self.nu = nu 
         self.min = min_ferm
         self.max = max_ferm 
         self.brix = brix 
+        self.min_opt = min_opt
+        self.max_opt = max_opt 
 
 class Vino: 
-    def __init__(self, precio_media, precio_dst, volumen):
+    def __init__(self, tipo, precio_dstbn, precio_media, precio_dst, volumen):
         """
         precio_media: la media del precio del vino 
         precio_dst: desviacion estandar del precio del vino 
         volumen: volumen demandado por el vino
         """
+        self.tipo = tipo 
+        self.precio_dstbn = precio_dstbn 
         self.precio_media = precio_media
         self.precio_dst = precio_dst 
         self.volumen = volumen
