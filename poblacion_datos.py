@@ -1,6 +1,4 @@
 from entidades import * 
-import sys ####borrar
-sys.path.append('C:/Users/Carolina Stuardo/AppData/Local/Programs/Python/Python36/Lib/site-packages')##
 import pandas as pd
 
 
