@@ -15,7 +15,7 @@ class Procesamiento:
         pass
 
     def mezcla(self): 
-        pass
+        pass 
 
 class Lote:
     def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio):
@@ -37,6 +37,7 @@ class Lote:
         self.p_11 = p_11 
         self.dist = dist 
         self.precio = precio 
+    
          
 class Uva:
     def __init__(self, nu, min_ferm, max_ferm, brix):
