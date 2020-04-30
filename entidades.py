@@ -1,13 +1,69 @@
+import random 
+
 class Procesamiento: 
-    def __init__(self): 
-        pass
+    def __init__(self, masa_inicial): 
+        self.masa_entrada = masa_inicial #kg
+        self.masa_en_molienda = 0 #kg
+        self.produccion_molienda = 0 #kg
+        self.masa_en_presando = 0 #kg
+        self.produccion_prensado = 0 #L
+        
+        self.eq_molienda = 4
+        self.eq_prensado = 6
+        self.eq_clarificacion = 2
+        self.eq_mezcla= 2
+        self.cap_max_molienda = 12000
+        self.cap_max_prensado = 15000
+        self.cap_max_clarificacion = 10000
+        self.cap_max_mezcla= 10000
+        self.caudal_molienda = 3000
+        self.caudal_prensado = 2500
+        self.caudal_clarificacion = 5000
+        self.caudal_mezcla = 5000  
+        self.merma_molienda = 0.05
+        self.merma_prensado = 0.35
+        self.merma_mezcla = 0.15
+        self.merma_clarificacion = 0.05
+        self.corriente_molienda = 11400 
+        self.corriente_prensado = 9750
+        self.corriente_mezcla = 8500
+        self.corriente_clarificacion = 9500 
 
     def molienda(self):
-        pass
+        #1h de molienda
+        #Inicio de la hora
+        if self.masa_entrada <= (self.cap_max_molienda * self.eq_molienda)-self.masa_en_molienda:
+            self.masa_en_molienda += self.masa_entrada
+            self.masa_entrada = 0
+        else:
+            self.masa_entrada -= (self.cap_max_molienda * self.eq_molienda)-self.masa_en_molienda
+            self.masa_en_molienda = self.cap_max_molienda * self.eq_molienda
+        #Termino de la hora
+        self.masa_en_molienda *= (1-self.merma_molienda)
+        if self.masa_en_molienda >= self.caudal_molienda * self.eq_molienda:
+            self.produccion_molienda = self.caudal_molienda * self.eq_molienda
+        else:
+            self.produccion_molienda = self.masa_en_molienda 
+        self.masa_en_molienda -= self.produccion_molienda
 
     def prensado(self):
-        pass
-
+        #1h de prensado
+        #Inicio de la hora
+        if self.produccion_molienda <= (self.cap_max_prensado * self.eq_prensado)-self.masa_en_prensado:
+            self.masa_en_prensado += self.produccion_molienda
+            self.produccion_molienda = 0
+        else:
+            self.produccion_molienda -= (self.cap_max_prensado * self.eq_prensado)-self.masa_en_prensado
+            self.masa_en_prensado = self.cap_max_prensado * self.eq_prensado
+        #Termino de la hora
+        """
+        self.masa_en_pensado *= (1-self.merma_prensado) #Falta pasar a litros
+        if self.masa_en_prensado >= self.caudal_prensado * self.eq_prensado:
+            self.produccion_prensado = self.caudal_prensado * self.eq_prensado
+        else:
+            self.produccion_prensado = self.masa_en_prensado
+        self.masa_en_prensado -= self.produccion_prensado
+        """
     def clarificacion(self):
         pass
 
@@ -70,4 +126,22 @@ class Vino:
         self.precio_dst = precio_dst 
         self.volumen = volumen
 
+class Receta:
+    def __init__(self, tipo_vino, id_receta, J1, J2, J3, J4, J5, J6, J7, J8):
+        self.tipo_vino= tipo_vino
+        self.id= id_receta
+        self.J1 = J1
+        self.J2 = J2
+        self.J3 = J3
+        self.J4 = J4
+        self.J5 = J5
+        self.J6 = J6
+        self.J7 = J7
+        self.J8 = J8
 
+class Estanque:
+    def __init__(self, tipo_estanque, cantidad, capacidad_u, capacidad_t):
+        self.tipo = tipo_estanque
+        self.cantidad = cantidad
+        self.capacidad_unitaria = capacidad_u
+        self.capacidad_total = capacidad_t
