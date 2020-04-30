@@ -1,12 +1,12 @@
-import random 
-
 class Procesamiento: 
     def __init__(self, masa_inicial): 
         self.masa_entrada = masa_inicial #kg
         self.masa_en_molienda = 0 #kg
         self.produccion_molienda = 0 #kg
-        self.masa_en_presando = 0 #kg
+        self.masa_en_prensado = 0 #kg
         self.produccion_prensado = 0 #L
+        self.volumen_en_clarificacion = 0 #L
+        self.produccion_clarificacion = 0 #L
         
         self.eq_molienda = 4
         self.eq_prensado = 6
@@ -29,6 +29,9 @@ class Procesamiento:
         self.corriente_mezcla = 8500
         self.corriente_clarificacion = 9500 
 
+    def entrada_masa(self,masa):
+        self.masa_entrada += masa
+
     def molienda(self):
         #1h de molienda
         #Inicio de la hora
@@ -41,31 +44,47 @@ class Procesamiento:
         #Termino de la hora
         self.masa_en_molienda *= (1-self.merma_molienda)
         if self.masa_en_molienda >= self.caudal_molienda * self.eq_molienda:
-            self.produccion_molienda = self.caudal_molienda * self.eq_molienda
+            self.produccion_molienda += self.caudal_molienda * self.eq_molienda
+            self.masa_en_molienda -= self.caudal_molienda * self.eq_molienda
         else:
-            self.produccion_molienda = self.masa_en_molienda 
-        self.masa_en_molienda -= self.produccion_molienda
+            self.produccion_molienda += self.masa_en_molienda 
+            self.masa_en_molienda = 0
 
     def prensado(self):
         #1h de prensado
         #Inicio de la hora
-        if self.produccion_molienda <= (self.cap_max_prensado * self.eq_prensado)-self.masa_en_prensado:
+        if self.produccion_molienda <= (self.cap_max_prensado * self.eq_prensado)- self.masa_en_prensado:
             self.masa_en_prensado += self.produccion_molienda
             self.produccion_molienda = 0
         else:
             self.produccion_molienda -= (self.cap_max_prensado * self.eq_prensado)-self.masa_en_prensado
             self.masa_en_prensado = self.cap_max_prensado * self.eq_prensado
         #Termino de la hora
-        """
-        self.masa_en_pensado *= (1-self.merma_prensado) #Falta pasar a litros
+        self.masa_en_prensado *= (1-self.merma_prensado) #Ahora son litros
         if self.masa_en_prensado >= self.caudal_prensado * self.eq_prensado:
-            self.produccion_prensado = self.caudal_prensado * self.eq_prensado
+            self.produccion_prensado += self.caudal_prensado * self.eq_prensado
+            self.masa_en_prensado -= self.caudal_prensado * self.eq_prensado
         else:
-            self.produccion_prensado = self.masa_en_prensado
-        self.masa_en_prensado -= self.produccion_prensado
-        """
+            self.produccion_prensado += self.masa_en_prensado
+            self.masa_en_prensado = 0
+
     def clarificacion(self):
-        pass
+        #1h de clarificacion
+        #Inicio de la hora
+        if self.produccion_prensado <= (self.cap_max_clarificacion * self.eq_clarificacion)-self.volumen_en_clarificacion:
+            self.volumen_en_clarificacion += self.produccion_prensado
+            self.produccion_prensado = 0
+        else:
+            self.produccion_prensado -= (self.cap_max_clarificacion * self.eq_clarificacion)-self.volumen_en_clarificacion
+            self.volumen_en_clarificacion = self.cap_max_clarificacion * self.eq_clarificacion
+        #Termino de la hora
+        self.volumen_en_clarificacion *= (1-self.merma_clarificacion)
+        if self.volumen_en_clarificacion >= self.caudal_clarificacion * self.eq_clarificacion:
+            self.produccion_clarificacion += self.caudal_clarificacion * self.eq_clarificacion
+            self.volumen_en_clarificacion -= self.caudal_clarificacion * self.eq_clarificacion
+        else:
+            self.produccion_clarificacion += self.volumen_en_clarificacion
+            self.volumen_en_clarificacion = 0
 
     def fermentacion(self):
         pass
@@ -145,3 +164,6 @@ class Estanque:
         self.cantidad = cantidad
         self.capacidad_unitaria = capacidad_u
         self.capacidad_total = capacidad_t
+
+
+
