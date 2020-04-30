@@ -7,17 +7,16 @@ seed(1)
 
 class Camion:
     _id = 0
-    def __init__(self, tiempo_instancia, unidades_carga):
+    def __init__(self, tiempo_instancia):
         Camion._id += 1
         self.id = Camion._id
         self.tiempo_llegada = tiempo_instancia
         self.estacion = None #estación de descarga
         self.tiempo_abandono_fabrica = None
-        self.unidades_carga= unidades_carga #para calcular tiempo descarga
-
+        self.tiempo_descarga= 10
     
     def generar_tiempo_abandono_fabrica(self, tiempo_actual):
-        self.tiempo_abandono_fabrica = tiempo_actual + timedelta(minutes=int(10*self.unidades_carga))
+        self.tiempo_abandono_fabrica = tiempo_actual + timedelta(minutes=self.tiempo_descarga)
 
     def generar_tiempo_total_sistema(self, tiempo_actual): #cola + descarga
         self.tiempo_total_sistema = tiempo_actual - self.tiempo_llegada
@@ -157,7 +156,7 @@ class Fabrica:
         print("La cantidad de camiones que terminaron la descarga {}".format(self.cantidad_camiones_descargados))
 
 
-new_fabrica = Fabrica(4,10)
+new_fabrica = Fabrica(4)
 inicio = time.time()
 new_fabrica.run()
 new_fabrica.show()
