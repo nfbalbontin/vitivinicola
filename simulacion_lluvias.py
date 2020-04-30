@@ -39,7 +39,7 @@ class Lluvias:
             return "fin"
         return prox_evento
 
-    # funcion que define la lluvia
+    # funcion que define lluvia
     def llueve(self):
         time.sleep(0.4)
         print("\r\r\033[91m[Llueve]\033[0m el día: {} ".format(self.tiempo_actual))
@@ -73,7 +73,7 @@ class Lluvias:
         print("La cantidad de días que no llovió fue: {}". format(self.cantidad_dias_no_lluvia))
 
 
-l=Lote("codigo", "tipo_u", "tn", "opt", 0.8, 0.1, "dist", "precio") #Ejemplo
+l=Lote("codigo", "tipo_u", "tn", "opt", 0.7, 0.1, "dist", "precio") #Ejemplo
 lluvias = Lluvias(7,l) #Ejemplos simulación de 7 días para el lote l
 inicio = time.time()
 lluvias.run()
