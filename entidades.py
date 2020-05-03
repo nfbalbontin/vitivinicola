@@ -1,3 +1,79 @@
+from collections import deque
+from random import expovariate, randint, uniform, seed
+from datetime import datetime, timedelta
+import time
+import numpy as np
+seed(1)
+
+class Simulacion:
+    def __init__(self, datetime, dias_simulacion):
+        # usamos datetime para manejar temporalidad
+        self.date = datetime
+        #self.tiempo_actual = date
+        self.dia_actual = -6 
+        self.hora_actual = 0
+        #self.dias_totales = date + timedelta(days = dias_simulacion)
+        self.dias_totales = dias_simulacion
+
+        # seteamos inputs de distribuciones y estructuras de la simulación
+
+    # motor de la simulacion 
+    def run(self, lotes):
+        while self.dia_actual < self.dias_totales:
+            print("\r\r\033[95m DIA {0}\033".format(self.date + timedelta(days = self.dia_actual)))
+            for i in lotes: 
+                if lotes[i].rango_simulacion[0] <= self.dia_actual <= lotes[i].rango_simulacion[1]: 
+                    if lotes[i].evento_lluvia == "llueve": 
+                        lotes[i].dias_lluvia[self.dia_actual] = 1
+                        print("\r\r\033[91m[Llueve]\033[0m el día: {0} [0m en el lote \033[93m{1}\033".format(self.date + timedelta(days = self.dia_actual), i))
+                    elif lotes[i].evento_lluvia == "no_llueve":
+                        lotes[i].dias_lluvia[self.dia_actual] = 0
+                        print("\r\r\033[92m[No llueve]\033[0m el día: {0} [0m en el lote \033[93m{1}\033".format(self.date + timedelta(days = self.dia_actual), i))
+            #while self.hora_actual < 24: 
+            #    self.hora_actual += 1
+            self.dia_actual += 1
+                
+class Lote:
+    def __init__(self, codigo, tipo_u, tn, i_sim, f_sim, p_01, p_11, dist, precio):
+        """ 
+        codigo: codigo de lote 
+        tipo_u: tipo de uva que genera el lote
+        tn: toneladas de produccion
+        rango_simulacion: 7 dias antes y 7 dias despues del dia optimo donde se simula la lluvia
+        p_01: probabilidad de que en el lote llueva si ayer no llovio
+        p_11: probabilidad de que en el lote llueva si ayer llovio
+        dist: distancia que existe entre el lote y la planta 
+        precio: precio de la uva por kilogramo 
+        dias_lluvia: dias que efectivamente llovio o no en ese lote 
+        llovio_ayer: indica si llovio o no el dia anterior 
+        """
+        self.codigo = codigo
+        self.tipo_u = tipo_u 
+        self.tn = tn 
+        self.rango_simulacion = [i_sim, f_sim]
+        self.p_01 = p_01
+        self.p_11 = p_11 
+        self.dist = dist 
+        self.precio = precio 
+        self.dias_lluvia = {}
+        self.llovio_ayer = False 
+
+    @property
+    def evento_lluvia(self):
+        eventos= ["llueve", "no_llueve"]
+        if self.llovio_ayer:
+            probabilidades = [self.p_11, (1-self.p_11)]
+        else:
+            probabilidades = [self.p_01, (1-self.p_01)]
+        evento = np.random.choice(eventos,p=probabilidades)
+        if evento == "llueve": 
+            self.llovio_ayer = True
+            return evento
+        else: 
+            self.llovio_ayer = False 
+            return evento 
+
+    
 class Procesamiento: 
     def __init__(self, masa_inicial): 
         self.masa_entrada = masa_inicial #kg
@@ -92,28 +168,7 @@ class Procesamiento:
     def mezcla(self): 
         pass 
 
-class Lote:
-    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio):
-        """ 
-        codigo: codigo de lote 
-        tipo_u: tipo de uva que genera el lote
-        tn: toneladas de produccion
-        opt: dia optimo de cosecha 
-        p_01: probabilidad de que en el lote llueva si ayer no llovio
-        p_11: probabilidad de que en el lote llueva si ayer llovio
-        dist: distancia que existe entre el lote y la planta 
-        precio: precio de la uva por kilogramo 
-        """
-        self.codigo = codigo
-        self.tipo_u = tipo_u 
-        self.tn = tn 
-        self.opt = opt
-        self.p_01 = p_01
-        self.p_11 = p_11 
-        self.dist = dist 
-        self.precio = precio 
-    
-         
+
 class Uva:
     def __init__(self, tipo, nu, min_ferm, max_ferm, brix, min_opt, max_opt):
         """
