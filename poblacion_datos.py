@@ -53,9 +53,9 @@ def poblar_estanques(path):
                                          df_estanques.iloc[row, 3])
     return estanques
 
-
 #poblar_lotes('docs/vitivinicola.xlsx')
 #poblar_uvas('docs/vitivinicola.xlsx')
 #poblar_vinos('docs/vitivinicola.xlsx')
 #poblar_recetas('docs/vitivinicola.xlsx')
 #poblar_estanques('docs/vitivinicola.xlsx')
+
