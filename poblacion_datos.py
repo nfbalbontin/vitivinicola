@@ -1,4 +1,4 @@
-from entidades import * 
+
 import pandas as pd
 
 
@@ -8,9 +8,8 @@ def poblar_lotes(path):
     print(df_lotes.iloc[0,0])
     for row in range(df_lotes['Lote COD'].count()): 
         lotes[df_lotes.iloc[row, 0]] = Lote(df_lotes.iloc[row, 0], df_lotes.iloc[row, 1], df_lotes.iloc[row, 2], 
-                                            int(df_lotes.iloc[row, 3]) - 7, int(df_lotes.iloc[row, 3]) + 7, 
-                                            df_lotes.iloc[row, 4], df_lotes.iloc[row, 5], df_lotes.iloc[row, 6], 
-                                            df_lotes.iloc[row, 7])
+                                            df_lotes.iloc[row, 3], df_lotes.iloc[row, 4], df_lotes.iloc[row, 5], 
+                                            df_lotes.iloc[row, 6], df_lotes.iloc[row, 7])
     return lotes 
 
 def poblar_uvas(path): 

@@ -3,10 +3,12 @@ from random import expovariate, randint, uniform, seed
 from datetime import datetime, timedelta
 import time
 import numpy as np
+import csv
+import pandas as pd
 seed(1)
 
 class Simulacion:
-    def __init__(self, datetime, dias_simulacion):
+    def __init__(self, datetime, dias_simulacion, path_excel):
         # usamos datetime para manejar temporalidad
         self.date = datetime
         #self.tiempo_actual = date
@@ -14,32 +16,83 @@ class Simulacion:
         self.hora_actual = 0
         #self.dias_totales = date + timedelta(days = dias_simulacion)
         self.dias_totales = dias_simulacion
-
+        self.lotes = self.poblar_lotes(path_excel)
+        self.uvas = self.poblar_uvas(path_excel)
+        self.vinos = self.poblar_vinos(path_excel)
+        self.recetas = self.poblar_recetas(path_excel)
+        self.estanques = self.poblar_estanques(path_excel)
         # seteamos inputs de distribuciones y estructuras de la simulación
 
     # motor de la simulacion 
-    def run(self, lotes):
+    def run(self):
         while self.dia_actual < self.dias_totales:
-            print("\r\r\033[95m DIA {0}\033".format(self.date + timedelta(days = self.dia_actual)))
-            for i in lotes: 
-                if lotes[i].rango_simulacion[0] <= self.dia_actual <= lotes[i].rango_simulacion[1]: 
-                    if lotes[i].evento_lluvia == "llueve": 
-                        lotes[i].dias_lluvia[self.dia_actual] = 1
-                        print("\r\r\033[91m[Llueve]\033[0m el día: {0} [0m en el lote \033[93m{1}\033".format(self.date + timedelta(days = self.dia_actual), i))
-                    elif lotes[i].evento_lluvia == "no_llueve":
-                        lotes[i].dias_lluvia[self.dia_actual] = 0
-                        print("\r\r\033[92m[No llueve]\033[0m el día: {0} [0m en el lote \033[93m{1}\033".format(self.date + timedelta(days = self.dia_actual), i))
-            #while self.hora_actual < 24: 
+            #print("\r\r\033[95m DIA {0}\033".format(self.date + timedelta(days = self.dia_actual)))
+            for i in self.lotes: 
+                if self.lotes[i].opt - 7 <= self.dia_actual <= self.lotes[i].opt: 
+                    self.lotes[i].dias_lluvia["antes"] += self.lotes[i].evento_lluvia
+                elif self.lotes[i].opt < self.dia_actual <= self.lotes[i].opt + 7: 
+                    self.lotes[i].dias_lluvia["despues"] += self.lotes[i].evento_lluvia
+                   # print("\r\r{0}[0m el día: {1} [0m en el lote \033[93m{1}\033".format("\033[92m[Llueve]\033" if self.lotes[i].evento_lluvia == 1 else "\033[91m[No llueve]\033", self.date + timedelta(days = self.dia_actual), i))
+                         #while self.hora_actual < 24: 
             #    self.hora_actual += 1
-            self.dia_actual += 1
-                
+            self.dia_actual += 1 
+    
+  
+    def poblar_lotes(self, path): 
+        lotes = {}
+        df_lotes = pd.read_excel(path, sheet_name='lotes', encoding="utf-8", usecols='A:H', dtype={'Lote COD': str, 'Tipo UVA': str, 'Tn': int, 'Dia optimo cosecha': int, 'p_01': float, 'p_11': float, 'km a planta': int, '$/kg': float})
+        
+        for row in range(df_lotes['Lote COD'].count()): 
+            lotes[df_lotes.iloc[row, 0]] = Lote(df_lotes.iloc[row, 0], df_lotes.iloc[row, 1], df_lotes.iloc[row, 2], 
+                                                df_lotes.iloc[row, 3], df_lotes.iloc[row, 4], df_lotes.iloc[row, 5], 
+                                                df_lotes.iloc[row, 6], df_lotes.iloc[row, 7])
+        return lotes 
+
+    def poblar_uvas(self, path): 
+        uvas = {}
+        df_uvas = pd.read_excel(path, sheet_name='uvas', encoding="utf-8", usecols='A:G', 
+                                dtype={'Uva': str, 'nu': int, 'min': float, 'max': float, 'brix optimo': float, 
+                                        'q[t-7]': float, 'q[t+7]': float}) 
+        for row in range(df_uvas['Uva'].count()): 
+            uvas[df_uvas.iloc[row, 0]] = Uva(df_uvas.iloc[row, 0], df_uvas.iloc[row, 1], df_uvas.iloc[row, 2], 
+                                            df_uvas.iloc[row, 3], df_uvas.iloc[row, 4], df_uvas.iloc[row, 5],
+                                            df_uvas.iloc[row, 6])
+        return uvas       
+    
+    def poblar_vinos(self, path): 
+        vinos = {}
+        df_vinos = pd.read_excel(path, sheet_name='vinos', encoding="utf-8", usecols='A:E', 
+                                dtype={'Vino Tipo': str, 'Dist': str, 'media': float, 'dst': float, 'volumen': int})
+        for row in range(df_vinos['Vino Tipo'].count()): 
+            vinos[df_vinos.iloc[row, 0]] = Vino(df_vinos.iloc[row, 0], df_vinos.iloc[row, 1], df_vinos.iloc[row, 2], 
+                                            df_vinos.iloc[row, 3], df_vinos.iloc[row, 4])
+        return vinos 
+    
+    def poblar_recetas(self, path):
+        recetas={}
+        df_recetas = pd.read_excel(path, sheet_name='recetas', encoding="utf-8", usecols='A:J',  
+                                                    dtype={'k':str,'m':int,'J1':float,'J2':float,'J3':float,'J4':float,'J5':float,'J6':float,'J7':float,'J8':float})
+        for row in range(df_recetas['k'].count()):
+            recetas[df_recetas.iloc[row, 0], df_recetas.iloc[row, 1]]= Receta(df_recetas.iloc[row, 0], df_recetas.iloc[row, 1], df_recetas.iloc[row, 2], df_recetas.iloc[row, 3],
+                                            df_recetas.iloc[row, 4],df_recetas.iloc[row, 5], df_recetas.iloc[row, 6], df_recetas.iloc[row, 7], df_recetas.iloc[row, 8],df_recetas.iloc[row, 9])
+        return recetas
+    
+    def poblar_estanques(self, path):
+        estanques={}
+        df_estanques= pd.read_excel(path, sheet_name='estanques',encoding="utf-8", usecols='A:D', 
+                                                    dtype={'TK':str,'#':int,'cap(m3)':int,'(m3)':int})
+        for row in range(df_estanques['TK'].count()):
+            estanques[df_estanques.iloc[row,0]]=Estanque(df_estanques.iloc[row, 0], df_estanques.iloc[row, 1], df_estanques.iloc[row, 2], 
+                                            df_estanques.iloc[row, 3])
+        return estanques
+
 class Lote:
-    def __init__(self, codigo, tipo_u, tn, i_sim, f_sim, p_01, p_11, dist, precio):
+    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio):
         """ 
         codigo: codigo de lote 
         tipo_u: tipo de uva que genera el lote
         tn: toneladas de produccion
-        rango_simulacion: 7 dias antes y 7 dias despues del dia optimo donde se simula la lluvia
+        opt: dia optimo de cosecha 
         p_01: probabilidad de que en el lote llueva si ayer no llovio
         p_11: probabilidad de que en el lote llueva si ayer llovio
         dist: distancia que existe entre el lote y la planta 
@@ -50,23 +103,24 @@ class Lote:
         self.codigo = codigo
         self.tipo_u = tipo_u 
         self.tn = tn 
-        self.rango_simulacion = [i_sim, f_sim]
+        self.opt = int(opt)
         self.p_01 = p_01
         self.p_11 = p_11 
         self.dist = dist 
         self.precio = precio 
-        self.dias_lluvia = {}
+        self.dias_lluvia = {"antes": 0, "despues": 0}
         self.llovio_ayer = False 
 
     @property
     def evento_lluvia(self):
-        eventos= ["llueve", "no_llueve"]
+        #LLueve = 1, No LLueve = 0
+        eventos= [1, 0]
         if self.llovio_ayer:
             probabilidades = [self.p_11, (1-self.p_11)]
         else:
             probabilidades = [self.p_01, (1-self.p_01)]
         evento = np.random.choice(eventos,p=probabilidades)
-        if evento == "llueve": 
+        if evento == 1: 
             self.llovio_ayer = True
             return evento
         else: 
