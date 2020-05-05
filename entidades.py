@@ -1,12 +1,139 @@
+from collections import deque
+from random import expovariate, randint, uniform, seed
+from datetime import datetime, timedelta
+import time
+import numpy as np
+import csv
+import pandas as pd
+seed(1)
+
+class Simulacion:
+    def __init__(self, datetime, dias_simulacion, path_excel):
+        # usamos datetime para manejar temporalidad
+        self.date = datetime
+        #self.tiempo_actual = date
+        self.dia_actual = -6 
+        self.hora_actual = 0
+        #self.dias_totales = date + timedelta(days = dias_simulacion)
+        self.dias_totales = dias_simulacion
+        self.lotes = self.poblar_lotes(path_excel)
+        self.uvas = self.poblar_uvas(path_excel)
+        self.vinos = self.poblar_vinos(path_excel)
+        self.recetas = self.poblar_recetas(path_excel)
+        self.estanques = self.poblar_estanques(path_excel)
+        # seteamos inputs de distribuciones y estructuras de la simulación
+
+    # motor de la simulacion 
+    def run(self):
+        while self.dia_actual < self.dias_totales:
+            #print("\r\r\033[95m DIA {0}\033".format(self.date + timedelta(days = self.dia_actual)))
+            for i in self.lotes: 
+                if self.lotes[i].opt - 7 <= self.dia_actual <= self.lotes[i].opt: 
+                    self.lotes[i].dias_lluvia["antes"] += self.lotes[i].evento_lluvia
+                elif self.lotes[i].opt < self.dia_actual <= self.lotes[i].opt + 7: 
+                    self.lotes[i].dias_lluvia["despues"] += self.lotes[i].evento_lluvia
+                   # print("\r\r{0}[0m el día: {1} [0m en el lote \033[93m{1}\033".format("\033[92m[Llueve]\033" if self.lotes[i].evento_lluvia == 1 else "\033[91m[No llueve]\033", self.date + timedelta(days = self.dia_actual), i))
+                         #while self.hora_actual < 24: 
+            #    self.hora_actual += 1
+            self.dia_actual += 1 
+    
+  
+    def poblar_lotes(self, path): 
+        lotes = {}
+        df_lotes = pd.read_excel(path, sheet_name='lotes', encoding="utf-8", usecols='A:H', dtype={'Lote COD': str, 'Tipo UVA': str, 'Tn': int, 'Dia optimo cosecha': int, 'p_01': float, 'p_11': float, 'km a planta': int, '$/kg': float})
+        
+        for row in range(df_lotes['Lote COD'].count()): 
+            lotes[df_lotes.iloc[row, 0]] = Lote(df_lotes.iloc[row, 0], df_lotes.iloc[row, 1], df_lotes.iloc[row, 2], 
+                                                df_lotes.iloc[row, 3], df_lotes.iloc[row, 4], df_lotes.iloc[row, 5], 
+                                                df_lotes.iloc[row, 6], df_lotes.iloc[row, 7])
+        return lotes 
+
+    def poblar_uvas(self, path): 
+        uvas = {}
+        df_uvas = pd.read_excel(path, sheet_name='uvas', encoding="utf-8", usecols='A:G', 
+                                dtype={'Uva': str, 'nu': int, 'min': float, 'max': float, 'brix optimo': float, 
+                                        'q[t-7]': float, 'q[t+7]': float}) 
+        for row in range(df_uvas['Uva'].count()): 
+            uvas[df_uvas.iloc[row, 0]] = Uva(df_uvas.iloc[row, 0], df_uvas.iloc[row, 1], df_uvas.iloc[row, 2], 
+                                            df_uvas.iloc[row, 3], df_uvas.iloc[row, 4], df_uvas.iloc[row, 5],
+                                            df_uvas.iloc[row, 6])
+        return uvas       
+    
+    def poblar_vinos(self, path): 
+        vinos = {}
+        df_vinos = pd.read_excel(path, sheet_name='vinos', encoding="utf-8", usecols='A:E', 
+                                dtype={'Vino Tipo': str, 'Dist': str, 'media': float, 'dst': float, 'volumen': int})
+        for row in range(df_vinos['Vino Tipo'].count()): 
+            vinos[df_vinos.iloc[row, 0]] = Vino(df_vinos.iloc[row, 0], df_vinos.iloc[row, 1], df_vinos.iloc[row, 2], 
+                                            df_vinos.iloc[row, 3], df_vinos.iloc[row, 4])
+        return vinos 
+    
+    def poblar_recetas(self, path):
+        recetas={}
+        df_recetas = pd.read_excel(path, sheet_name='recetas', encoding="utf-8", usecols='A:J',  
+                                                    dtype={'k':str,'m':int,'J1':float,'J2':float,'J3':float,'J4':float,'J5':float,'J6':float,'J7':float,'J8':float})
+        for row in range(df_recetas['k'].count()):
+            recetas[df_recetas.iloc[row, 0], df_recetas.iloc[row, 1]]= Receta(df_recetas.iloc[row, 0], df_recetas.iloc[row, 1], df_recetas.iloc[row, 2], df_recetas.iloc[row, 3],
+                                            df_recetas.iloc[row, 4],df_recetas.iloc[row, 5], df_recetas.iloc[row, 6], df_recetas.iloc[row, 7], df_recetas.iloc[row, 8],df_recetas.iloc[row, 9])
+        return recetas
+    
+    def poblar_estanques(self, path):
+        estanques={}
+        df_estanques= pd.read_excel(path, sheet_name='estanques',encoding="utf-8", usecols='A:D', 
+                                                    dtype={'TK':str,'#':int,'cap(m3)':int,'(m3)':int})
+        for row in range(df_estanques['TK'].count()):
+            estanques[df_estanques.iloc[row,0]]=Estanque(df_estanques.iloc[row, 0], df_estanques.iloc[row, 1], df_estanques.iloc[row, 2], 
+                                            df_estanques.iloc[row, 3])
+        return estanques
+
+class Lote:
+    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio):
+        """ 
+        codigo: codigo de lote 
+        tipo_u: tipo de uva que genera el lote
+        tn: toneladas de produccion
+        opt: dia optimo de cosecha 
+        p_01: probabilidad de que en el lote llueva si ayer no llovio
+        p_11: probabilidad de que en el lote llueva si ayer llovio
+        dist: distancia que existe entre el lote y la planta 
+        precio: precio de la uva por kilogramo 
+        dias_lluvia: dias que efectivamente llovio o no en ese lote 
+        llovio_ayer: indica si llovio o no el dia anterior 
+        """
+        self.codigo = codigo
+        self.tipo_u = tipo_u 
+        self.tn = tn 
+        self.opt = int(opt)
+        self.p_01 = p_01
+        self.p_11 = p_11 
+        self.dist = dist 
+        self.precio = precio 
+        self.dias_lluvia = {"antes": 0, "despues": 0}
+        self.llovio_ayer = False 
+
+    @property
+    def evento_lluvia(self):
+        #LLueve = 1, No LLueve = 0
+        eventos= [1, 0]
+        if self.llovio_ayer:
+            probabilidades = [self.p_11, (1-self.p_11)]
+        else:
+            probabilidades = [self.p_01, (1-self.p_01)]
+        evento = np.random.choice(eventos,p=probabilidades)
+        if evento == 1: 
+            self.llovio_ayer = True
+            return evento
+        else: 
+            self.llovio_ayer = False 
+            return evento 
+
+    
 class Procesamiento: 
-    def __init__(self, masa_inicial): 
-        self.masa_entrada = masa_inicial #kg
-        self.masa_en_molienda = 0 #kg
-        self.produccion_molienda = 0 #kg
-        self.masa_en_prensado = 0 #kg
-        self.produccion_prensado = 0 #L
-        self.volumen_en_clarificacion = 0 #L
-        self.produccion_clarificacion = 0 #L
+    def __init__(self, uvas, estanques, recetas, vinos): 
+        self.uvas = uvas #diccconarios de población de datos
+        self.estanques= estanques
+        self.recetas = recetas
+        self.vinos = vinos
         
         self.eq_molienda = 4
         self.eq_prensado = 6
@@ -29,62 +156,53 @@ class Procesamiento:
         self.corriente_mezcla = 8500
         self.corriente_clarificacion = 9500 
 
-    def entrada_masa(self,masa):
-        self.masa_entrada += masa
+    def ingreso_lote(self, lote):
+        self.uvas[lote.tipo_u].ingreso_uva(lote.tn) 
 
     def molienda(self):
         #1h de molienda
         #Inicio de la hora
-        if self.masa_entrada <= (self.cap_max_molienda * self.eq_molienda)-self.masa_en_molienda:
-            self.masa_en_molienda += self.masa_entrada
-            self.masa_entrada = 0
+        if self.uvas[tipo_uva].masa_entrada <= self.caudal_molienda * (1+self.merma_molienda):
+            masa_en_molienda = self.uvas[tipo_uva].masa_entrada
+            self.uvas[tipo_uva].masa_entrada = 0
         else:
-            self.masa_entrada -= (self.cap_max_molienda * self.eq_molienda)-self.masa_en_molienda
-            self.masa_en_molienda = self.cap_max_molienda * self.eq_molienda
+            self.uvas[tipo_uva].masa_entrada -= self.caudal_molienda * (1+self.merma_molienda)
+            masa_en_molienda = self.caudal_molienda 
         #Termino de la hora
-        self.masa_en_molienda *= (1-self.merma_molienda)
-        if self.masa_en_molienda >= self.caudal_molienda * self.eq_molienda:
-            self.produccion_molienda += self.caudal_molienda * self.eq_molienda
-            self.masa_en_molienda -= self.caudal_molienda * self.eq_molienda
+        if masa_en_molienda == self.caudal_molienda:
+            self.uvas[tipo_uva].produccion_molienda += self.caudal_molienda 
         else:
-            self.produccion_molienda += self.masa_en_molienda 
-            self.masa_en_molienda = 0
+            self.uvas[tipo_uva].produccion_molienda += masa_en_molienda
 
     def prensado(self):
         #1h de prensado
         #Inicio de la hora
-        if self.produccion_molienda <= (self.cap_max_prensado * self.eq_prensado)- self.masa_en_prensado:
-            self.masa_en_prensado += self.produccion_molienda
-            self.produccion_molienda = 0
+        if self.uvas[tipo_uva].produccion_molienda <= self.caudal_prensado * (1+self.merma_prensado):
+            masa_en_prensado = self.uvas[tipo_uva].produccion_molienda
+            self.uvas[tipo_uva].produccion_molienda = 0
         else:
-            self.produccion_molienda -= (self.cap_max_prensado * self.eq_prensado)-self.masa_en_prensado
-            self.masa_en_prensado = self.cap_max_prensado * self.eq_prensado
+            self.uvas[tipo_uva].produccion_molienda -= self.caudal_prensado * (1+self.merma_prensado)
+            masa_en_prensado = self.caudal_prensado 
         #Termino de la hora
-        self.masa_en_prensado *= (1-self.merma_prensado) #Ahora son litros
-        if self.masa_en_prensado >= self.caudal_prensado * self.eq_prensado:
-            self.produccion_prensado += self.caudal_prensado * self.eq_prensado
-            self.masa_en_prensado -= self.caudal_prensado * self.eq_prensado
+        if masa_en_prensado == self.caudal_prensado:
+            self.uvas[tipo_uva].produccion_prensado += self.caudal_prensado 
         else:
-            self.produccion_prensado += self.masa_en_prensado
-            self.masa_en_prensado = 0
+            self.uvas[tipo_uva].produccion_prensado += masa_en_prensado 
 
     def clarificacion(self):
         #1h de clarificacion
         #Inicio de la hora
-        if self.produccion_prensado <= (self.cap_max_clarificacion * self.eq_clarificacion)-self.volumen_en_clarificacion:
-            self.volumen_en_clarificacion += self.produccion_prensado
-            self.produccion_prensado = 0
+        if self.uvas[tipo_uva].produccion_prensado <= self.caudal_clarificacion * (1+self.merma_clarificacion):
+            masa_en_clarificacion = self.uvas[tipo_uva].produccion_prensado
+            self.uvas[tipo_uva].produccion_prensado = 0
         else:
-            self.produccion_prensado -= (self.cap_max_clarificacion * self.eq_clarificacion)-self.volumen_en_clarificacion
-            self.volumen_en_clarificacion = self.cap_max_clarificacion * self.eq_clarificacion
+            self.uvas[tipo_uva].produccion_prensado -= self.caudal_clarificacion * (1+self.merma_clarificacion)
+            masa_en_clarificacion = self.caudal_clarificacion 
         #Termino de la hora
-        self.volumen_en_clarificacion *= (1-self.merma_clarificacion)
-        if self.volumen_en_clarificacion >= self.caudal_clarificacion * self.eq_clarificacion:
-            self.produccion_clarificacion += self.caudal_clarificacion * self.eq_clarificacion
-            self.volumen_en_clarificacion -= self.caudal_clarificacion * self.eq_clarificacion
+        if masa_en_clarificacion == self.caudal_clarificacion:
+            self.uvas[tipo_uva].produccion_clarificacion += self.caudal_clarificacion 
         else:
-            self.produccion_clarificacion += self.volumen_en_clarificacion
-            self.volumen_en_clarificacion = 0
+            self.uvas[tipo_uva].produccion_clarificacion += masa_en_clarificacion 
 
     def fermentacion(self):
         pass
@@ -92,28 +210,7 @@ class Procesamiento:
     def mezcla(self): 
         pass 
 
-class Lote:
-    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio):
-        """ 
-        codigo: codigo de lote 
-        tipo_u: tipo de uva que genera el lote
-        tn: toneladas de produccion
-        opt: dia optimo de cosecha 
-        p_01: probabilidad de que en el lote llueva si ayer no llovio
-        p_11: probabilidad de que en el lote llueva si ayer llovio
-        dist: distancia que existe entre el lote y la planta 
-        precio: precio de la uva por kilogramo 
-        """
-        self.codigo = codigo
-        self.tipo_u = tipo_u 
-        self.tn = tn 
-        self.opt = opt
-        self.p_01 = p_01
-        self.p_11 = p_11 
-        self.dist = dist 
-        self.precio = precio 
-    
-         
+
 class Uva:
     def __init__(self, tipo, nu, min_ferm, max_ferm, brix, min_opt, max_opt):
         """
@@ -131,6 +228,14 @@ class Uva:
         self.brix = brix 
         self.min_opt = min_opt
         self.max_opt = max_opt 
+
+        self.masa_entrada = 0 #kg
+        self.produccion_molienda = 0 #kg
+        self.produccion_prensado = 0 #L
+        self.produccion_clarificacion = 0 #L
+
+    def ingreso_uva(self, toneladas):
+        self.masa_entrada += toneladas * 1000 #kg
 
 class Vino: 
     def __init__(self, tipo, precio_dstbn, precio_media, precio_dst, volumen):
