@@ -129,14 +129,11 @@ class Lote:
 
     
 class Procesamiento: 
-    def __init__(self, masa_inicial): 
-        self.masa_entrada = masa_inicial #kg
-        self.masa_en_molienda = 0 #kg
-        self.produccion_molienda = 0 #kg
-        self.masa_en_prensado = 0 #kg
-        self.produccion_prensado = 0 #L
-        self.volumen_en_clarificacion = 0 #L
-        self.produccion_clarificacion = 0 #L
+    def __init__(self, uvas, estanques, recetas, vinos): 
+        self.uvas = uvas #diccconarios de población de datos
+        self.estanques= estanques
+        self.recetas = recetas
+        self.vinos = vinos
         
         self.eq_molienda = 4
         self.eq_prensado = 6
@@ -159,62 +156,53 @@ class Procesamiento:
         self.corriente_mezcla = 8500
         self.corriente_clarificacion = 9500 
 
-    def entrada_masa(self,masa):
-        self.masa_entrada += masa
+    def ingreso_lote(self, lote):
+        self.uvas[lote.tipo_u].ingreso_uva(lote.tn) 
 
     def molienda(self):
         #1h de molienda
         #Inicio de la hora
-        if self.masa_entrada <= (self.cap_max_molienda * self.eq_molienda)-self.masa_en_molienda:
-            self.masa_en_molienda += self.masa_entrada
-            self.masa_entrada = 0
+        if self.uvas[tipo_uva].masa_entrada <= self.caudal_molienda * (1+self.merma_molienda):
+            masa_en_molienda = self.uvas[tipo_uva].masa_entrada
+            self.uvas[tipo_uva].masa_entrada = 0
         else:
-            self.masa_entrada -= (self.cap_max_molienda * self.eq_molienda)-self.masa_en_molienda
-            self.masa_en_molienda = self.cap_max_molienda * self.eq_molienda
+            self.uvas[tipo_uva].masa_entrada -= self.caudal_molienda * (1+self.merma_molienda)
+            masa_en_molienda = self.caudal_molienda 
         #Termino de la hora
-        self.masa_en_molienda *= (1-self.merma_molienda)
-        if self.masa_en_molienda >= self.caudal_molienda * self.eq_molienda:
-            self.produccion_molienda += self.caudal_molienda * self.eq_molienda
-            self.masa_en_molienda -= self.caudal_molienda * self.eq_molienda
+        if masa_en_molienda == self.caudal_molienda:
+            self.uvas[tipo_uva].produccion_molienda += self.caudal_molienda 
         else:
-            self.produccion_molienda += self.masa_en_molienda 
-            self.masa_en_molienda = 0
+            self.uvas[tipo_uva].produccion_molienda += masa_en_molienda
 
     def prensado(self):
         #1h de prensado
         #Inicio de la hora
-        if self.produccion_molienda <= (self.cap_max_prensado * self.eq_prensado)- self.masa_en_prensado:
-            self.masa_en_prensado += self.produccion_molienda
-            self.produccion_molienda = 0
+        if self.uvas[tipo_uva].produccion_molienda <= self.caudal_prensado * (1+self.merma_prensado):
+            masa_en_prensado = self.uvas[tipo_uva].produccion_molienda
+            self.uvas[tipo_uva].produccion_molienda = 0
         else:
-            self.produccion_molienda -= (self.cap_max_prensado * self.eq_prensado)-self.masa_en_prensado
-            self.masa_en_prensado = self.cap_max_prensado * self.eq_prensado
+            self.uvas[tipo_uva].produccion_molienda -= self.caudal_prensado * (1+self.merma_prensado)
+            masa_en_prensado = self.caudal_prensado 
         #Termino de la hora
-        self.masa_en_prensado *= (1-self.merma_prensado) #Ahora son litros
-        if self.masa_en_prensado >= self.caudal_prensado * self.eq_prensado:
-            self.produccion_prensado += self.caudal_prensado * self.eq_prensado
-            self.masa_en_prensado -= self.caudal_prensado * self.eq_prensado
+        if masa_en_prensado == self.caudal_prensado:
+            self.uvas[tipo_uva].produccion_prensado += self.caudal_prensado 
         else:
-            self.produccion_prensado += self.masa_en_prensado
-            self.masa_en_prensado = 0
+            self.uvas[tipo_uva].produccion_prensado += masa_en_prensado 
 
     def clarificacion(self):
         #1h de clarificacion
         #Inicio de la hora
-        if self.produccion_prensado <= (self.cap_max_clarificacion * self.eq_clarificacion)-self.volumen_en_clarificacion:
-            self.volumen_en_clarificacion += self.produccion_prensado
-            self.produccion_prensado = 0
+        if self.uvas[tipo_uva].produccion_prensado <= self.caudal_clarificacion * (1+self.merma_clarificacion):
+            masa_en_clarificacion = self.uvas[tipo_uva].produccion_prensado
+            self.uvas[tipo_uva].produccion_prensado = 0
         else:
-            self.produccion_prensado -= (self.cap_max_clarificacion * self.eq_clarificacion)-self.volumen_en_clarificacion
-            self.volumen_en_clarificacion = self.cap_max_clarificacion * self.eq_clarificacion
+            self.uvas[tipo_uva].produccion_prensado -= self.caudal_clarificacion * (1+self.merma_clarificacion)
+            masa_en_clarificacion = self.caudal_clarificacion 
         #Termino de la hora
-        self.volumen_en_clarificacion *= (1-self.merma_clarificacion)
-        if self.volumen_en_clarificacion >= self.caudal_clarificacion * self.eq_clarificacion:
-            self.produccion_clarificacion += self.caudal_clarificacion * self.eq_clarificacion
-            self.volumen_en_clarificacion -= self.caudal_clarificacion * self.eq_clarificacion
+        if masa_en_clarificacion == self.caudal_clarificacion:
+            self.uvas[tipo_uva].produccion_clarificacion += self.caudal_clarificacion 
         else:
-            self.produccion_clarificacion += self.volumen_en_clarificacion
-            self.volumen_en_clarificacion = 0
+            self.uvas[tipo_uva].produccion_clarificacion += masa_en_clarificacion 
 
     def fermentacion(self):
         pass
@@ -240,6 +228,14 @@ class Uva:
         self.brix = brix 
         self.min_opt = min_opt
         self.max_opt = max_opt 
+
+        self.masa_entrada = 0 #kg
+        self.produccion_molienda = 0 #kg
+        self.produccion_prensado = 0 #L
+        self.produccion_clarificacion = 0 #L
+
+    def ingreso_uva(self, toneladas):
+        self.masa_entrada += toneladas * 1000 #kg
 
 class Vino: 
     def __init__(self, tipo, precio_dstbn, precio_media, precio_dst, volumen):
