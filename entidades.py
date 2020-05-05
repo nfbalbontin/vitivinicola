@@ -132,6 +132,14 @@ class Uva:
         self.min_opt = min_opt
         self.max_opt = max_opt 
 
+        self.masa_entrada = 0 #kg
+        self.produccion_molienda = 0 #kg
+        self.produccion_prensado = 0 #L
+        self.produccion_clarificacion = 0 #L
+
+    def ingreso_uva(self, toneladas):
+        self.masa_entrada += toneladas * 1000 #kg
+
 class Vino: 
     def __init__(self, tipo, precio_dstbn, precio_media, precio_dst, volumen):
         """
