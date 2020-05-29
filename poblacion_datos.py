@@ -1,6 +1,6 @@
 
 import pandas as pd
-
+from entidades import * 
 
 def poblar_lotes(path): 
     lotes = {}

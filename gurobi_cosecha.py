@@ -16,10 +16,14 @@ K: vinos
 M: recetas
 '''
 
-D=[i for i in range(100)]
+D=[i for i in range(3)]
+print(lotes)
 L=[lote for lote in lotes]
+print(uvas)
 J=[uva for uva in uvas]
+print(vinos)
 K=[vino for vino in vinos]
+print(recetas)
 M=[receta for receta in recetas]
 
 
@@ -28,11 +32,11 @@ m= Model('planificacion_cosecha')
 
 #Variables
 '''
-b_jl : binaria que toma valor 1 si se decide comprar el lote l de la uva tipo j el día t, y 0 si no
+b_j : binaria que toma valor 1 si se decide comprar el lote l el día t, y 0 si no
 y_jld: Cantidad de kilos cosechados de la uva tipo j el día t en el lote l (y por lo tanto, transportados a la planta el día t)    
 x_km:Metros cúbicos de vino k producidos por receta m.
 '''
-b = m.addVars(J, L, ub=1, name="b_jl")
+b = m.addVars(L, ub=1, name="b_jl")
 y = m.addVars(J, L, D,vtype=GRB.CONTINUOUS, name="y_jld")
 x = m.addVars(K, M,vtype=GRB.CONTINUOUS, name="x_km")
 
@@ -55,11 +59,16 @@ c3_djl: Costo asociado a la pérdida en calidad en el tipo de uva j que producen
 Ymax:Cantidad de kilos de uvas máximos que se pueden cosechar en un día.
 Sjmax:Cantidad de kilos de uvas máximos que se pueden cosechar durante un periodo T, dada la capacidad de procesamiento que tienen los estanques de fermentación.
 '''
-ct_djl=1 #calcular
+"""
+Costo asociado a la pérdida de calidad por cosechar el día d del tipo de uva j dado un día óptimo de cosecha del lote l.
+"""
+c_djl=10000 #calcular
 
 
 #Función Objetivo
-m.setObjective(sum(lotes[l].precio * lotes[l].tn * b[j,l] for l in L for j in J) + sum(ct_djl * y[j,l,d] for l in L for j in J for d in D), GRB.MINIMIZE)
+
+m.setObjective()
+m.setObjective(sum((lotes[l].precio * lotes[l].tn * b[l] + for l in L) + sum(c_djl * y[j,l] for l in L for j in J), GRB.MINIMIZE)
 
 #Restricciones
 #No se puede cosechar más de los kg disponibles en el lote.
