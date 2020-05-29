@@ -12,7 +12,7 @@ class Simulacion:
         # usamos datetime para manejar temporalidad
         self.date = datetime
         #self.tiempo_actual = date
-        self.dia_actual = -6 
+        self.dia_actual = -6
         self.hora_actual = 0
         #self.dias_totales = date + timedelta(days = dias_simulacion)
         self.dias_totales = dias_simulacion
@@ -36,16 +36,16 @@ class Simulacion:
                          #while self.hora_actual < 24: 
             #    self.hora_actual += 1
             self.dia_actual += 1 
-    
+
   
     def poblar_lotes(self, path): 
         lotes = {}
-        df_lotes = pd.read_excel(path, sheet_name='lotes', encoding="utf-8", usecols='A:H', dtype={'Lote COD': str, 'Tipo UVA': str, 'Tn': int, 'Dia optimo cosecha': int, 'p_01': float, 'p_11': float, 'km a planta': int, '$/kg': float})
+        df_lotes = pd.read_excel(path, sheet_name='lotes', encoding="utf-8", usecols='A:I', dtype={'Lote COD': str, 'Tipo UVA': str, 'Tn': int, 'Dia optimo cosecha': int, 'p_01': float, 'p_11': float, 'km a planta': int, '$/kg': float})
         
         for row in range(df_lotes['Lote COD'].count()): 
             lotes[df_lotes.iloc[row, 0]] = Lote(df_lotes.iloc[row, 0], df_lotes.iloc[row, 1], df_lotes.iloc[row, 2], 
                                                 df_lotes.iloc[row, 3], df_lotes.iloc[row, 4], df_lotes.iloc[row, 5], 
-                                                df_lotes.iloc[row, 6], df_lotes.iloc[row, 7])
+                                                df_lotes.iloc[row, 6], df_lotes.iloc[row, 7], df_lotes.iloc[row, 8])
         return lotes 
 
     def poblar_uvas(self, path): 
@@ -87,7 +87,7 @@ class Simulacion:
         return estanques
 
 class Lote:
-    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio):
+    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio, costo_trans):
         """ 
         codigo: codigo de lote 
         tipo_u: tipo de uva que genera el lote
@@ -108,6 +108,8 @@ class Lote:
         self.p_11 = p_11 
         self.dist = dist 
         self.precio = precio 
+        self.costo_transporte = costo_trans
+        #agregar resto de costos
         self.dias_lluvia = {"antes": 0, "despues": 0}
         self.llovio_ayer = False 
 
@@ -159,50 +161,14 @@ class Procesamiento:
     def ingreso_lote(self, lote):
         self.uvas[lote.tipo_u].ingreso_uva(lote.tn) 
 
-    def molienda(self):
-        #1h de molienda
-        #Inicio de la hora
-        if self.uvas[tipo_uva].masa_entrada <= self.caudal_molienda * (1+self.merma_molienda):
-            masa_en_molienda = self.uvas[tipo_uva].masa_entrada
-            self.uvas[tipo_uva].masa_entrada = 0
-        else:
-            self.uvas[tipo_uva].masa_entrada -= self.caudal_molienda * (1+self.merma_molienda)
-            masa_en_molienda = self.caudal_molienda 
-        #Termino de la hora
-        if masa_en_molienda == self.caudal_molienda:
-            self.uvas[tipo_uva].produccion_molienda += self.caudal_molienda 
-        else:
-            self.uvas[tipo_uva].produccion_molienda += masa_en_molienda
-
+    def molienda(self, tipo_uva):
+        pass
+ 
     def prensado(self):
-        #1h de prensado
-        #Inicio de la hora
-        if self.uvas[tipo_uva].produccion_molienda <= self.caudal_prensado * (1+self.merma_prensado):
-            masa_en_prensado = self.uvas[tipo_uva].produccion_molienda
-            self.uvas[tipo_uva].produccion_molienda = 0
-        else:
-            self.uvas[tipo_uva].produccion_molienda -= self.caudal_prensado * (1+self.merma_prensado)
-            masa_en_prensado = self.caudal_prensado 
-        #Termino de la hora
-        if masa_en_prensado == self.caudal_prensado:
-            self.uvas[tipo_uva].produccion_prensado += self.caudal_prensado 
-        else:
-            self.uvas[tipo_uva].produccion_prensado += masa_en_prensado 
+        pass
 
     def clarificacion(self):
-        #1h de clarificacion
-        #Inicio de la hora
-        if self.uvas[tipo_uva].produccion_prensado <= self.caudal_clarificacion * (1+self.merma_clarificacion):
-            masa_en_clarificacion = self.uvas[tipo_uva].produccion_prensado
-            self.uvas[tipo_uva].produccion_prensado = 0
-        else:
-            self.uvas[tipo_uva].produccion_prensado -= self.caudal_clarificacion * (1+self.merma_clarificacion)
-            masa_en_clarificacion = self.caudal_clarificacion 
-        #Termino de la hora
-        if masa_en_clarificacion == self.caudal_clarificacion:
-            self.uvas[tipo_uva].produccion_clarificacion += self.caudal_clarificacion 
-        else:
-            self.uvas[tipo_uva].produccion_clarificacion += masa_en_clarificacion 
+        pass
 
     def fermentacion(self):
         pass
@@ -241,7 +207,7 @@ class Vino:
     def __init__(self, tipo, precio_dstbn, precio_media, precio_dst, volumen):
         """
         precio_media: la media del precio del vino 
-        precio_dst: desviacion estandar del precio del vino 
+        precio_dst: desviacion estandar del precio del vino (fracción)
         volumen: volumen demandado por el vino
         """
         self.tipo = tipo 
