@@ -40,12 +40,12 @@ class Simulacion:
   
     def poblar_lotes(self, path): 
         lotes = {}
-        df_lotes = pd.read_excel(path, sheet_name='lotes', encoding="utf-8", usecols='A:I', dtype={'Lote COD': str, 'Tipo UVA': str, 'Tn': int, 'Dia optimo cosecha': int, 'p_01': float, 'p_11': float, 'km a planta': int, '$/kg': float})
+        df_lotes = pd.read_excel(path, sheet_name='lotes', encoding="utf-8", usecols='A:J', dtype={'Lote COD': str, 'Tipo UVA': str, 'Tn': int, 'Dia optimo cosecha': int, 'p_01': float, 'p_11': float, 'km a planta': int, '$/kg': float})
         
         for row in range(df_lotes['Lote COD'].count()): 
             lotes[df_lotes.iloc[row, 0]] = Lote(df_lotes.iloc[row, 0], df_lotes.iloc[row, 1], df_lotes.iloc[row, 2], 
                                                 df_lotes.iloc[row, 3], df_lotes.iloc[row, 4], df_lotes.iloc[row, 5], 
-                                                df_lotes.iloc[row, 6], df_lotes.iloc[row, 7], df_lotes.iloc[row, 8])
+                                                df_lotes.iloc[row, 6], df_lotes.iloc[row, 7], df_lotes.iloc[row, 8], df_lotes.iloc[row, 9])
         return lotes 
 
     def poblar_uvas(self, path): 
@@ -87,7 +87,7 @@ class Simulacion:
         return estanques
 
 class Lote:
-    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio, costo_trans):
+    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio, costo_transporte, costo_lluvias):
         """ 
         codigo: codigo de lote 
         tipo_u: tipo de uva que genera el lote
@@ -108,8 +108,8 @@ class Lote:
         self.p_11 = p_11 
         self.dist = dist 
         self.precio = precio 
-        self.costo_transporte = costo_trans
-        #agregar resto de costos
+        self.costo_transporte = costo_transporte
+        self.costo_lluvias= costo_lluvias
         self.dias_lluvia = {"antes": 0, "despues": 0}
         self.llovio_ayer = False 
 
