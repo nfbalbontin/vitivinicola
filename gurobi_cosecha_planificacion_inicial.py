@@ -15,7 +15,7 @@ J: uvas
 V: vinos
 R: recetas
 '''
-D=[i for i in range(100)] 
+D=[i for i in range(93)] 
 L=[lote for lote in lotes]
 J=[uva for uva in uvas]
 V=[vino for vino in vinos]
@@ -60,10 +60,6 @@ for uva in uvas:
 m.setObjective(sum(lotes[l].precio * lotes[l].tn *1000 * x[l,d] for l in L for d in D) + sum(lotes[l].costo_transporte * x[l,d] for l in L for d in D) + sum(lotes[l].costo_lluvias * x[l,d] for l in L for d in D), GRB.MINIMIZE)
 
 #Restricciones
-'''
-NOTA: falta la restricción de cosechar el día óptimo y el costo de esto.
-En la FO está min el costo de trasporte y costo de lluvias.
-'''
 #Definición variable w 
 m.addConstrs(sum(x[l,d]* lotes[l].tn *1000* relacion[j,l] for l in L) == w[j,d] for j in J for d in D)
 
@@ -78,6 +74,12 @@ m.addConstrs(sum(x[l,d] for d in D) <= 1 for l in L)
 
 #Cantidad cosechada en un día no puede superar el máximo de la fábrica al día
 m.addConstrs(sum(w[j,d] for j in J) <= y_max for d in D)
+
+#Un lote se puede cosechar solo entre día óptimo +7 y día óptimo -7
+for l in lotes:
+    for d in D:
+        if not (lotes[l].opt -7 <= d <= lotes[l].opt +7):
+            m.addConstr(x[l,d] == 0)
 
 #Satisfacción de demanda vino A
 ##Receta 1
