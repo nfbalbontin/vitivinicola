@@ -129,6 +129,25 @@ class Lote:
             self.llovio_ayer = False 
             return evento 
 
+    def calculo_costo_calidad(self, dia):
+        if self.tipo_u == 'J_1':
+            pass
+        elif self.tipo_u == 'J_2':
+            pass
+        elif self.tipo_u == 'J_3':
+            pass
+        elif self.tipo_u == 'J_4':
+            pass
+        elif self.tipo_u == 'J_5':
+            pass
+        elif self.tipo_u == 'J_6':
+            pass
+        elif self.tipo_u == 'J_7':
+            pass        
+        elif self.tipo_u == 'J_8':
+            pass
+
+
     
 class Procesamiento: 
     def __init__(self, uvas, estanques, recetas, vinos): 
