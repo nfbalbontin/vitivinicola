@@ -4,11 +4,10 @@ import pandas as pd
 
 def poblar_lotes(path): 
     lotes = {}
-    df_lotes = pd.read_excel(path, sheet_name='lotes', encoding="utf-8", usecols='A:J', dtype={'Lote COD': str, 'Tipo UVA': str, 'Tn': int, 'Dia optimo cosecha': int, 'p_01': float, 'p_11': float, 'km a planta': int, '$/kg': float})
+    df_lotes = pd.read_excel(path, sheet_name='lotes', encoding="utf-8", usecols='A:Z', dtype={'Lote COD': str, 'Tipo UVA': str, 'Tn': int, 'Dia optimo cosecha': int, 'p_01': float, 'p_11': float, 'km a planta': int, '$/kg': float})
     for row in range(df_lotes['Lote COD'].count()): 
-        lotes[df_lotes.iloc[row, 0]] = Lote(df_lotes.iloc[row, 0], df_lotes.iloc[row, 1], df_lotes.iloc[row, 2], 
-                                            df_lotes.iloc[row, 3], df_lotes.iloc[row, 4], df_lotes.iloc[row, 5], 
-                                            df_lotes.iloc[row, 6], df_lotes.iloc[row, 7], df_lotes.iloc[row, 8], df_lotes.iloc[row, 9])
+        lotes[df_lotes.iloc[row, 0]] = Lote(df_lotes.iloc[row, 0], df_lotes.iloc[row, 1], df_lotes.iloc[row, 2],df_lotes.iloc[row, 3], df_lotes.iloc[row, 4], df_lotes.iloc[row, 5], 
+                                            df_lotes.iloc[row, 6], df_lotes.iloc[row, 7], df_lotes.iloc[row, 11],df_lotes.iloc[row, 12], df_lotes.iloc[row, 13], df_lotes.iloc[row, 14], df_lotes.iloc[row, 15],df_lotes.iloc[row, 16],df_lotes.iloc[row, 17],df_lotes.iloc[row, 18],df_lotes.iloc[row, 19],df_lotes.iloc[row, 20],df_lotes.iloc[row, 21],df_lotes.iloc[row, 22],df_lotes.iloc[row, 23],df_lotes.iloc[row, 24],df_lotes.iloc[row, 25])
     return lotes 
 
 def poblar_uvas(path): 

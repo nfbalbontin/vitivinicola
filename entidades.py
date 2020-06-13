@@ -87,7 +87,7 @@ class Simulacion:
         return estanques
 
 class Lote:
-    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio, costo_transporte, costo_lluvias):
+    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio, a7,a6,a5,a4,a3,a2,a1,a0,d1,d2,d3,d4,d5,d6,d7):
         """ 
         codigo: codigo de lote 
         tipo_u: tipo de uva que genera el lote
@@ -108,8 +108,22 @@ class Lote:
         self.p_11 = p_11 
         self.dist = dist 
         self.precio = precio 
-        self.costo_transporte = costo_transporte
-        self.costo_lluvias= costo_lluvias
+        self.a7=a7
+        self.a6=a6
+        self.a5=a5
+        self.a4=a4
+        self.a3=a3
+        self.a2=a2
+        self.a1=a1
+        self.a0=a0
+        self.d1=d1
+        self.d2=d2
+        self.d3=d3
+        self.d4=d4
+        self.d5=d5
+        self.d6=d6
+        self.d7=d7
+
         self.dias_lluvia = {"antes": 0, "despues": 0}
         self.llovio_ayer = False 
 
@@ -129,25 +143,41 @@ class Lote:
             self.llovio_ayer = False 
             return evento 
 
-    def calculo_costo_calidad(self, dia):
-        if self.tipo_u == 'J_1':
-            pass
-        elif self.tipo_u == 'J_2':
-            pass
-        elif self.tipo_u == 'J_3':
-            pass
-        elif self.tipo_u == 'J_4':
-            pass
-        elif self.tipo_u == 'J_5':
-            pass
-        elif self.tipo_u == 'J_6':
-            pass
-        elif self.tipo_u == 'J_7':
-            pass        
-        elif self.tipo_u == 'J_8':
-            pass
-
-
+    def calcular_costo(self, dia):
+        if dia == self.opt-7:
+            calidad_max= self.a7
+        elif dia == self.opt-6:
+            calidad_max= self.a6
+        elif dia == self.opt-5:
+            calidad_max= self.a5
+        elif dia == self.opt-4:
+            calidad_max= self.a4
+        elif dia == self.opt-3:
+            calidad_max= self.a3
+        elif dia == self.opt-2:
+            calidad_max= self.a2
+        elif dia == self.opt-1:
+            calidad_max= self.a1
+        elif dia == self.opt:
+            calidad_max= self.a0
+        elif dia == self.opt+1:
+            calidad_max= self.d1
+        elif dia == self.opt+2:
+            calidad_max= self.d2
+        elif dia == self.opt+3:
+            calidad_max= self.d3
+        elif dia == self.opt+4:
+            calidad_max= self.d4
+        elif dia == self.opt+5:
+            calidad_max= self.d5
+        elif dia == self.opt+6:
+            calidad_max= self.d6
+        elif dia == self.opt+7:
+            calidad_max= self.d7
+        else:
+            calidad_max=1 #es para que no se caiga, no debería comprar estos días igual por la restricción.
+        costo= ((self.precio/calidad_max)-self.precio)*self.tn *1000
+        return costo
     
 class Procesamiento: 
     def __init__(self, uvas, estanques, recetas, vinos): 

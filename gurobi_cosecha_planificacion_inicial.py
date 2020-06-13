@@ -15,7 +15,7 @@ J: uvas
 V: vinos
 R: recetas
 '''
-D=[i for i in range(93)] 
+D=[i for i in range(7)] 
 L=[lote for lote in lotes]
 J=[uva for uva in uvas]
 V=[vino for vino in vinos]
@@ -37,16 +37,18 @@ x_ld : binaria que toma valor 1 si se decide comprar el lote l el día d
 y_jrv: cantidad de uva j que se usa para hacer la receta r del vino v
 w_jd: cantidad de uva j cosechada el día d en kilogramos
 b_vr: cantidad de vino v hecho con la receta r
+t_v: cantidad total del vino v producida
 '''
 x = m.addVars(L, D, vtype= GRB.BINARY, name="x_ld")
 y = m.addVars(J, R, V,vtype=GRB.CONTINUOUS, name="y_jrv")
 w = m.addVars(J, D,vtype=GRB.CONTINUOUS, name="w_jd")
 b = m.addVars(V, R,vtype=GRB.CONTINUOUS, name="b_vr")
+t = m.addVars(V,vtype=GRB.CONTINUOUS, name="t_v")
 
 #Parámetros
 M= 10000000000000 #número muy grande
-y_max=168000 #capacidad máxima de fábrica en un día, calibrable (14000*12)
-
+y_max=150000 #capacidad máxima de fábrica en un día, calibrable (10000kg*15hrs mínimo)
+porcentaje_demanda_semana= 0.057 #para cubrir el 80% de la demanda en 14 semanas, calibrable (0.057*14=0.8)
 relacion={} # 1 si la uva j esta en el lote l
 for uva in uvas:
     for lote in lotes:
@@ -57,7 +59,7 @@ for uva in uvas:
 
 
 #Función Objetivo
-m.setObjective(sum(lotes[l].precio * lotes[l].tn *1000 * x[l,d] for l in L for d in D) + sum(lotes[l].costo_transporte * x[l,d] for l in L for d in D) + sum(lotes[l].costo_lluvias * x[l,d] for l in L for d in D), GRB.MINIMIZE)
+m.setObjective((2.8*t['A']+3.1*t['B']+3.05*t['C']+2.7*t['D']+2.4*t['E']) - sum(lotes[l].precio * lotes[l].tn *1000 * x[l,d] + lotes[l].calcular_costo(d) * x[l,d] for l in L for d in D), GRB.MAXIMIZE)
 
 #Restricciones
 #Definición variable w 
@@ -74,6 +76,13 @@ m.addConstrs(sum(x[l,d] for d in D) <= 1 for l in L)
 
 #Cantidad cosechada en un día no puede superar el máximo de la fábrica al día
 m.addConstrs(sum(w[j,d] for j in J) <= y_max for d in D)
+
+#El total de un vino es la suma de sus recetas, definición de variable t
+m.addConstr(t['A'] == b['A','A',1]+b['A','A',2])
+m.addConstr(t['B'] == b['B','B',1]+b['B','B',2]+ b['B','B',3])
+m.addConstr(t['C'] == b['C','C',1])
+m.addConstr(t['D'] == b['D','D',1]+b['D','D',2])
+m.addConstr(t['E'] == b['E','E',1]+b['E','E',2])
 
 #Un lote se puede cosechar solo entre día óptimo +7 y día óptimo -7
 for l in lotes:
@@ -96,7 +105,7 @@ m.addConstr(y['J_6','A',2, 'A'] == 0.2 * b['A','A',2])
 m.addConstr(y['J_7','A',2, 'A'] == 0.2 * b['A','A',2])
 m.addConstr(y['J_8','A',2, 'A'] == 0.1 * b['A','A',2])
 
-m.addConstr(b['A','A',1]+b['A','A',2]>= vinos['A'].volumen* 1000)
+m.addConstr(t['A']<= vinos['A'].volumen* 1000 * porcentaje_demanda_semana)
 
 #Satisfacción de demanda vino B
 ##Receta 1
@@ -123,7 +132,7 @@ m.addConstr(y['J_6','B',3, 'B'] == 0.1 * b['B','B',3])
 m.addConstr(y['J_7','B',3, 'B'] == 0.2 * b['B','B',3])
 m.addConstr(y['J_8','B',3, 'B'] == 0.2 * b['B','B',3])
 
-m.addConstr(b['B','B',1]+b['B','B',2]+b['B','B',3]>= vinos['B'].volumen *1000)
+m.addConstr(t['B']<= vinos['B'].volumen *1000 * porcentaje_demanda_semana)
 
 #Satisfacción de demanda vino C
 ##Receta 1
@@ -133,7 +142,7 @@ m.addConstr(y['J_5','C',1, 'C'] == 0.1 * b['C','C',1])
 m.addConstr(y['J_6','C',1, 'C'] == 0.2 * b['C','C',1])
 m.addConstr(y['J_7','C',1, 'C'] == 0.1 * b['C','C',1])
 
-m.addConstr(b['C','C',1]>= vinos['C'].volumen *1000)
+m.addConstr(t['C']<= vinos['C'].volumen *1000 * porcentaje_demanda_semana)
 
 #Satisfacción de demanda vino D
 ##Receta 1
@@ -151,7 +160,7 @@ m.addConstr(y['J_6','D',2, 'D'] == 0.2 * b['D','D',2])
 m.addConstr(y['J_7','D',2, 'D'] == 0.3 * b['D','D',2])
 m.addConstr(y['J_8','D',2, 'D'] == 0.1 * b['D','D',2])
 
-m.addConstr(b['D','D',1]+b['D','D',2]>= vinos['D'].volumen*1000)
+m.addConstr(t['D']<= vinos['D'].volumen*1000 * porcentaje_demanda_semana)
 
 #Satisfacción de demanda vino E
 ##Receta 1
@@ -174,7 +183,7 @@ m.addConstr(y['J_6','E',2, 'E'] == 0.25 * b['E','E',2])
 m.addConstr(y['J_7','E',2, 'E'] == 0.15 * b['E','E',2])
 m.addConstr(y['J_8','E',2, 'E'] == 0.05 * b['E','E',2])
 
-m.addConstr(b['E','E',1] + b['E','E',2] >= vinos['E'].volumen*1000)
+m.addConstr(t['E'] <= vinos['E'].volumen* 1000 * porcentaje_demanda_semana)
 
 m.optimize()
 
