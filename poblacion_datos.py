@@ -25,7 +25,6 @@ def poblar_vinos(path):
     vinos = {}
     df_vinos = pd.read_excel(path, sheet_name='vinos', encoding="utf-8", usecols='A:E', 
                              dtype={'Vino Tipo': str, 'Dist': str, 'media': float, 'dst': float, 'volumen': int})
-    print(df_vinos.iloc[0,0])
     for row in range(df_vinos['Vino Tipo'].count()): 
         vinos[df_vinos.iloc[row, 0]] = Vino(df_vinos.iloc[row, 0], df_vinos.iloc[row, 1], df_vinos.iloc[row, 2], 
                                          df_vinos.iloc[row, 3], df_vinos.iloc[row, 4])
@@ -36,7 +35,7 @@ def poblar_recetas(path):
     df_recetas = pd.read_excel(path, sheet_name='recetas', encoding="utf-8", usecols='A:J',  
                                                 dtype={'k':str,'m':int,'J1':float,'J2':float,'J3':float,'J4':float,'J5':float,'J6':float,'J7':float,'J8':float})
     for row in range(df_recetas['k'].count()):
-        recetas[df_recetas.iloc[row, 0], df_recetas.iloc[row, 1]]= Receta(df_recetas.iloc[row, 0], df_recetas.iloc[row, 1], df_recetas.iloc[row, 2], df_recetas.iloc[row, 3],
+        recetas[f'{df_recetas.iloc[row, 0]}{df_recetas.iloc[row, 1]}']= Receta(df_recetas.iloc[row, 0], df_recetas.iloc[row, 1], df_recetas.iloc[row, 2], df_recetas.iloc[row, 3],
                                           df_recetas.iloc[row, 4],df_recetas.iloc[row, 5], df_recetas.iloc[row, 6], df_recetas.iloc[row, 7], df_recetas.iloc[row, 8],df_recetas.iloc[row, 9])
     return recetas
 
