@@ -175,8 +175,8 @@ class Lote:
         elif dia == self.opt+7:
             calidad_max= self.d7
         else:
-            calidad_max=1 #es para que no se caiga, no debería comprar estos días igual por la restricción.
-        costo= ((self.precio/calidad_max)-self.precio)*self.tn *1000
+            calidad_max=0.000001 #es para que no se caiga, no debería comprar estos días igual por la restricción.
+        costo= ((self.precio/calidad_max)-self.precio)* self.tn *1000
         return costo
     
 class Procesamiento: 
