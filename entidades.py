@@ -143,7 +143,7 @@ class Lote:
             self.llovio_ayer = False 
             return evento 
 
-    def calcular_costo(self, dia):
+    def calcular_costo (self, dia):
         if dia == self.opt-7:
             calidad_max= self.a7
         elif dia == self.opt-6:
@@ -179,6 +179,60 @@ class Lote:
         costo= ((self.precio/calidad_max)-self.precio)* self.tn *1000
         return costo
     
+    def p_alcoholico(self, dia):
+        if self.tipo_u == 'J_1':
+            nu= 100
+        elif self.tipo_u == 'J_2':
+            nu= 85
+        elif self.tipo_u == 'J_3':
+            nu= 50
+        elif self.tipo_u == 'J_4':
+            nu= 55    
+        elif self.tipo_u == 'J_5':
+            nu= 75
+        elif self.tipo_u == 'J_6':
+            nu= 60
+        elif self.tipo_u == 'J_7':
+            nu= 65
+        elif self.tipo_u == 'J_8':
+            nu= 90
+
+        if dia == self.opt-7:
+            calidad_max= self.a7
+        elif dia == self.opt-6:
+            calidad_max= self.a6
+        elif dia == self.opt-5:
+            calidad_max= self.a5
+        elif dia == self.opt-4:
+            calidad_max= self.a4
+        elif dia == self.opt-3:
+            calidad_max= self.a3
+        elif dia == self.opt-2:
+            calidad_max= self.a2
+        elif dia == self.opt-1:
+            calidad_max= self.a1
+        elif dia == self.opt:
+            calidad_max= self.a0
+        elif dia == self.opt+1:
+            calidad_max= self.d1
+        elif dia == self.opt+2:
+            calidad_max= self.d2
+        elif dia == self.opt+3:
+            calidad_max= self.d3
+        elif dia == self.opt+4:
+            calidad_max= self.d4
+        elif dia == self.opt+5:
+            calidad_max= self.d5
+        elif dia == self.opt+6:
+            calidad_max= self.d6
+        elif dia == self.opt+7:
+            calidad_max= self.d7
+        else:
+            calidad_max=0.000001 #es para que no se caiga, no debería comprar estos días igual por la restricción.
+        potencial_alcholico= 0.62*nu*calidad_max
+        return potencial_alcholico
+        
+                                
 class Procesamiento: 
     def __init__(self, uvas, estanques, recetas, vinos): 
         self.uvas = uvas #diccconarios de población de datos
