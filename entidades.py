@@ -5,6 +5,7 @@ import time
 import numpy as np
 import csv
 import pandas as pd
+import math
 seed(1)
 
 class Simulacion:
@@ -87,7 +88,7 @@ class Simulacion:
         return estanques
 
 class Lote:
-    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio, a7,a6,a5,a4,a3,a2,a1,a0,d1,d2,d3,d4,d5,d6,d7):
+    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio, t_hasta_ferm, nu):
         """ 
         codigo: codigo de lote 
         tipo_u: tipo de uva que genera el lote
@@ -108,76 +109,68 @@ class Lote:
         self.p_11 = p_11 
         self.dist = dist 
         self.precio = precio 
-        self.a7=a7
-        self.a6=a6
-        self.a5=a5
-        self.a4=a4
-        self.a3=a3
-        self.a2=a2
-        self.a1=a1
-        self.a0=a0
-        self.d1=d1
-        self.d2=d2
-        self.d3=d3
-        self.d4=d4
-        self.d5=d5
-        self.d6=d6
-        self.d7=d7
-
+        # Este tiempo ya considera todo el que pasa hasta antes de entrar a fermentacion 
+        self.tiempo = t_hasta_ferm
+        self.nu = nu
         self.dias_lluvia = {"antes": 0, "despues": 0}
-        self.llovio_ayer = False 
+        self.lluvias = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-    @property
-    def evento_lluvia(self):
-        #LLueve = 1, No LLueve = 0
-        eventos= [1, 0]
-        if self.llovio_ayer:
-            probabilidades = [self.p_11, (1-self.p_11)]
-        else:
-            probabilidades = [self.p_01, (1-self.p_01)]
-        evento = np.random.choice(eventos,p=probabilidades)
-        if evento == 1: 
-            self.llovio_ayer = True
-            return evento
+    def calidad_max(self, dia): 
+        if self.tipo_u == 'J_1': 
+            return -((dia**2)/490) + dia/140 + 1
+        elif self.tipo_u == 'J_2': 
+            return -3*((dia**2)/1960) + dia/1400 + 1
+        elif self.tipo_u == 'J_3': 
+            return -9*((dia**2)/4900) + dia/700 + 1
+        elif self.tipo_u == 'J_4': 
+            return -19*((dia**2)/9800) + dia/280 + 1
+        elif self.tipo_u == 'J_5': 
+            return 1-(dia**2)/980
+        elif self.tipo_u == 'J_6': 
+            return -3*((dia**2)/1400)+ dia/1400 + 1
+        elif self.tipo_u == 'J_7': 
+            return -13*((dia**2)/9800) + dia/1400 + 1
+        elif self.tipo_u == 'J_8': 
+            return -17*((dia**2)/9800) + dia/280 + 1 
         else: 
-            self.llovio_ayer = False 
-            return evento 
+            return 0.00000000001
 
-    def calcular_costo (self, dia):
-        if dia == self.opt-7:
-            calidad_max= self.a7
-        elif dia == self.opt-6:
-            calidad_max= self.a6
-        elif dia == self.opt-5:
-            calidad_max= self.a5
-        elif dia == self.opt-4:
-            calidad_max= self.a4
-        elif dia == self.opt-3:
-            calidad_max= self.a3
-        elif dia == self.opt-2:
-            calidad_max= self.a2
-        elif dia == self.opt-1:
-            calidad_max= self.a1
-        elif dia == self.opt:
-            calidad_max= self.a0
-        elif dia == self.opt+1:
-            calidad_max= self.d1
-        elif dia == self.opt+2:
-            calidad_max= self.d2
-        elif dia == self.opt+3:
-            calidad_max= self.d3
-        elif dia == self.opt+4:
-            calidad_max= self.d4
-        elif dia == self.opt+5:
-            calidad_max= self.d5
-        elif dia == self.opt+6:
-            calidad_max= self.d6
-        elif dia == self.opt+7:
-            calidad_max= self.d7
-        else:
-            calidad_max=0.000001 #es para que no se caiga, no debería comprar estos días igual por la restricción.
-        costo= ((self.precio/calidad_max)-self.precio)* self.tn *1000
-        return costo
+    def calcular_costo(self, dia):
+        # LLueve = 1, No LLueve = 0
+        eventos= [1, 0]
+        rango = dia - self.opt
+        if -8 < rango < 8:
+            # Si es el primer dia de evaluacion del lote, por lo que no hay registro anterior
+            if rango == -7: 
+                probabilidades = [self.p_01, (1-self.p_01)]
+            # Revisamos si llovio o no el dia anterior
+            else: 
+                if self.lluvias[rango + 6] == 1:
+                    probabilidades = [self.p_11, (1-self.p_11)]
+                else:
+                    probabilidades = [self.p_01, (1-self.p_01)]
+            evento = np.random.choice(eventos,p=probabilidades)
+            # Si llueve, agregamos el evento de lluvia, sino no. 
+            if evento == 1: 
+                self.lluvias[rango + 7] = 1
+
+            # Se suman todos los dias que llovieron hasta la fecha
+            llovio = 0
+            for i in range(rango + 7): 
+                llovio += self.lluvias[i]
+            costo= (self.precio/(self.calidad_max(rango)-llovio*0.1 - (1 - math.exp(-self.tiempo/self.nu))) - self.precio)* self.tn*1000
+            print("LOTE: {}\n".format(self.codigo))
+            print("DIA: {}\n".format(dia))
+            print("RANGO: {}".format(rango))
+            print("CALIDAD MAX: {}\n".format(self.calidad_max(rango)))
+            print("PERDIDA DE CALIDAD: {}".format(1-math.exp(-self.tiempo/self.nu)))
+            print("LLUVIAS: {}".format(llovio))
+            print("CALIDAD TOTAL: {}".format(self.calidad_max(rango)-llovio*0.1 - (1-math.exp(-self.tiempo/self.nu))))
+            print("COSTO: {}".format(costo))
+            return costo*0.000000000001
+        else: 
+            return 1000000000000
+            print("entre -.-")
     
     def p_alcoholico(self, dia):
         if self.tipo_u == 'J_1':
