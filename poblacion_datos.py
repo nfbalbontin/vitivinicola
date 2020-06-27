@@ -1,4 +1,4 @@
-from entidades import Lote, Uva, Vino, Receta
+from entidades import Lote, Uva, Vino, Receta, Estanque
 import pandas as pd
 
 
@@ -6,8 +6,9 @@ def poblar_lotes(path):
     lotes = {}
     df_lotes = pd.read_excel(path, sheet_name='lotes', encoding="utf-8", usecols='A:Z', dtype={'Lote COD': str, 'Tipo UVA': str, 'Tn': int, 'Dia optimo cosecha': int, 'p_01': float, 'p_11': float, 'km a planta': int, '$/kg': float})
     for row in range(df_lotes['Lote COD'].count()): 
-        lotes[df_lotes.iloc[row, 0]] = Lote(df_lotes.iloc[row, 0], df_lotes.iloc[row, 1], df_lotes.iloc[row, 2],df_lotes.iloc[row, 3], df_lotes.iloc[row, 4], df_lotes.iloc[row, 5], 
-                                            df_lotes.iloc[row, 6], df_lotes.iloc[row, 7], df_lotes.iloc[row, 11],df_lotes.iloc[row, 12], df_lotes.iloc[row, 13], df_lotes.iloc[row, 14], df_lotes.iloc[row, 15],df_lotes.iloc[row, 16],df_lotes.iloc[row, 17],df_lotes.iloc[row, 18],df_lotes.iloc[row, 19],df_lotes.iloc[row, 20],df_lotes.iloc[row, 21],df_lotes.iloc[row, 22],df_lotes.iloc[row, 23],df_lotes.iloc[row, 24],df_lotes.iloc[row, 25])
+        lotes[df_lotes.iloc[row, 0]] = Lote(df_lotes.iloc[row, 0], df_lotes.iloc[row, 1], df_lotes.iloc[row, 2],df_lotes.iloc[row, 3],
+         df_lotes.iloc[row, 4], df_lotes.iloc[row, 5], df_lotes.iloc[row, 6], df_lotes.iloc[row, 7], df_lotes.iloc[row, 8],
+         df_lotes.iloc[row, 9], df_lotes.iloc[row, 10], df_lotes.iloc[row, 11])
     return lotes 
 
 def poblar_uvas(path): 
@@ -44,8 +45,9 @@ def poblar_estanques(path):
     df_estanques= pd.read_excel(path, sheet_name='estanques',encoding="utf-8", usecols='A:D', 
                                                 dtype={'TK':str,'#':int,'cap(m3)':int,'(m3)':int})
     for row in range(df_estanques['TK'].count()):
-        estanques[df_estanques.iloc[row,0]]=Estanque(df_estanques.iloc[row, 0], df_estanques.iloc[row, 1], df_estanques.iloc[row, 2], 
-                                         df_estanques.iloc[row, 3])
+        for estanque in range(int(df_estanques.iloc[row, 1])):
+            estanques[df_estanques.iloc[row,0]+str(estanque + 1)] = Estanque(df_estanques.iloc[row,0] + str(estanque + 1), 
+            df_estanques.iloc[row, 2])
     return estanques
 
 #poblar_lotes('docs/vitivinicola.xlsx')
