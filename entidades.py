@@ -88,7 +88,7 @@ class Simulacion:
         return estanques
 
 class Lote:
-    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio, t_hasta_ferm, nu):
+    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio, t_hasta_ferm, nu, dias_lluvia_prom, brix):
         """ 
         codigo: codigo de lote 
         tipo_u: tipo de uva que genera el lote
@@ -111,27 +111,59 @@ class Lote:
         self.precio = precio 
         # Este tiempo ya considera todo el que pasa hasta antes de entrar a fermentacion 
         self.tiempo = t_hasta_ferm
+        self.brix = brix
         self.nu = nu
+        self.dias_lluvia_prom = dias_lluvia_prom
         self.dias_lluvia = {"antes": 0, "despues": 0}
         self.lluvias = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.peso = self.prom_peso_recetas()
 
-    def calidad_max(self, dia): 
+    @property 
+    def calidad_precio(self): 
+        print("POTENCIAL ALCOHOLICO: {}".format(self.p_alcoholico(self.calidad_max(0) - (1 - math.exp( - self.tiempo/self.nu)))))
+        # self.prom_peso_recetas*self.p_alcoholico
+        return float(1+self.peso)*self.p_alcoholico((self.calidad_max(0) - (1 - math.exp( - self.tiempo/self.nu))))/(self.precio*self.dias_lluvia_prom)
+
+    def p_alcoholico(self, calidad):
+        return 0.62*self.brix*calidad
+
+    def prom_peso_recetas(self): 
         if self.tipo_u == 'J_1': 
-            return -((dia**2)/490) + dia/140 + 1
+            return 0.185555556
         elif self.tipo_u == 'J_2': 
-            return -3*((dia**2)/1960) + dia/1400 + 1
+            return 0.1625
         elif self.tipo_u == 'J_3': 
-            return -9*((dia**2)/4900) + dia/700 + 1
+            return 0.118571429
         elif self.tipo_u == 'J_4': 
-            return -19*((dia**2)/9800) + dia/280 + 1
+            return 0.164285714
         elif self.tipo_u == 'J_5': 
-            return 1-(dia**2)/980
+            return 0.157142857
         elif self.tipo_u == 'J_6': 
-            return -3*((dia**2)/1400)+ dia/1400 + 1
+            return 0.205
         elif self.tipo_u == 'J_7': 
-            return -13*((dia**2)/9800) + dia/1400 + 1
+            return 0.16875
         elif self.tipo_u == 'J_8': 
-            return -17*((dia**2)/9800) + dia/280 + 1 
+            return 0.11
+        else: 
+            return 0.00000000001
+
+    def calidad_max(self, rango): 
+        if self.tipo_u == 'J_1': 
+            return -((rango**2)/490) + rango/140 + 1
+        elif self.tipo_u == 'J_2': 
+            return -3*((rango**2)/1960) + rango/1400 + 1
+        elif self.tipo_u == 'J_3': 
+            return -9*((rango**2)/4900) + rango/700 + 1
+        elif self.tipo_u == 'J_4': 
+            return -19*((rango**2)/9800) + rango/280 + 1
+        elif self.tipo_u == 'J_5': 
+            return 1-(rango**2)/980
+        elif self.tipo_u == 'J_6': 
+            return -3*((rango**2)/1400)+ rango/1400 + 1
+        elif self.tipo_u == 'J_7': 
+            return -13*((rango**2)/9800) + rango/1400 + 1
+        elif self.tipo_u == 'J_8': 
+            return -17*((rango**2)/9800) + rango/280 + 1 
         else: 
             return 0.00000000001
 
@@ -159,6 +191,7 @@ class Lote:
             for i in range(rango + 7): 
                 llovio += self.lluvias[i]
             costo= (self.precio/(self.calidad_max(rango)-llovio*0.1 - (1 - math.exp(-self.tiempo/self.nu))) - self.precio)* self.tn*1000
+            """
             print("LOTE: {}\n".format(self.codigo))
             print("DIA: {}\n".format(dia))
             print("RANGO: {}".format(rango))
@@ -167,63 +200,12 @@ class Lote:
             print("LLUVIAS: {}".format(llovio))
             print("CALIDAD TOTAL: {}".format(self.calidad_max(rango)-llovio*0.1 - (1-math.exp(-self.tiempo/self.nu))))
             print("COSTO: {}".format(costo))
-            return costo*0.000000000001
+            """
+            return costo
         else: 
             return 1000000000000
             print("entre -.-")
-    
-    def p_alcoholico(self, dia):
-        if self.tipo_u == 'J_1':
-            nu= 100
-        elif self.tipo_u == 'J_2':
-            nu= 85
-        elif self.tipo_u == 'J_3':
-            nu= 50
-        elif self.tipo_u == 'J_4':
-            nu= 55    
-        elif self.tipo_u == 'J_5':
-            nu= 75
-        elif self.tipo_u == 'J_6':
-            nu= 60
-        elif self.tipo_u == 'J_7':
-            nu= 65
-        elif self.tipo_u == 'J_8':
-            nu= 90
 
-        if dia == self.opt-7:
-            calidad_max= self.a7
-        elif dia == self.opt-6:
-            calidad_max= self.a6
-        elif dia == self.opt-5:
-            calidad_max= self.a5
-        elif dia == self.opt-4:
-            calidad_max= self.a4
-        elif dia == self.opt-3:
-            calidad_max= self.a3
-        elif dia == self.opt-2:
-            calidad_max= self.a2
-        elif dia == self.opt-1:
-            calidad_max= self.a1
-        elif dia == self.opt:
-            calidad_max= self.a0
-        elif dia == self.opt+1:
-            calidad_max= self.d1
-        elif dia == self.opt+2:
-            calidad_max= self.d2
-        elif dia == self.opt+3:
-            calidad_max= self.d3
-        elif dia == self.opt+4:
-            calidad_max= self.d4
-        elif dia == self.opt+5:
-            calidad_max= self.d5
-        elif dia == self.opt+6:
-            calidad_max= self.d6
-        elif dia == self.opt+7:
-            calidad_max= self.d7
-        else:
-            calidad_max=0.000001 #es para que no se caiga, no debería comprar estos días igual por la restricción.
-        potencial_alcholico= 0.62*nu*calidad_max
-        return potencial_alcholico
         
                                 
 class Procesamiento: 
@@ -287,6 +269,7 @@ class Uva:
         self.nu = nu 
         self.min = min_ferm
         self.max = max_ferm 
+        self.prom = int(round((self.min + self.max)/2, 0))
         self.brix = brix 
         self.min_opt = min_opt
         self.max_opt = max_opt 
@@ -326,11 +309,8 @@ class Receta:
         self.J8 = J8
 
 class Estanque:
-    def __init__(self, tipo_estanque, cantidad, capacidad_u, capacidad_t):
-        self.tipo = tipo_estanque
-        self.cantidad = cantidad
-        self.capacidad_unitaria = capacidad_u
-        self.capacidad_total = capacidad_t
-
+    def __init__(self, nombre, capacidad):
+        self.tipo = nombre
+        self.capacidad = capacidad
 
 

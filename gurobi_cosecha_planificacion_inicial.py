@@ -7,6 +7,7 @@ uvas = poblar_uvas("docs/vitivinicola.xlsx")
 vinos = poblar_vinos("docs/vitivinicola.xlsx")
 recetas = poblar_recetas("docs/vitivinicola.xlsx")
 
+
 # Conjuntos
 """
 D: días
@@ -66,13 +67,12 @@ demanda_e= vinos["E"].volumen * 1333 / porcentaje_post_merma
 
 # Función Objetivo
 m.setObjective((2.8 * t["A"] + 3.1 * t["B"] + 3.05 * t["C"] + 2.7 * t["D"] + 2.4 * t["E"]
-    - sum(lotes[l].precio * lotes[l].tn * 1000 * x[l, d] for l in L for d in D))*lambda_1 - sum(lotes[l].calcular_costo(d) * x[l, d] for l in L for d in D)*(1-lambda_1), GRB.MAXIMIZE)
+    - sum(lotes[l].precio * lotes[l].tn * 1000 * x[l, d] for l in L for d in D)) - sum(lotes[l].calcular_costo(d) * x[l, d] for l in L for d in D), GRB.MAXIMIZE)
 
 
 # Restricciones
 # Definición variable w
-m.addConstrs(x[l, d] * lotes[l].tn * 1000 * relacion[j, l] == w[j, l, d]
-        for j in J for l in L for d in D)
+m.addConstrs(x[l, d] * lotes[l].tn * 1000 * relacion[j, l] == w[j, l, d]for j in J for l in L for d in D)
 
 # Definición variable y
 m.addConstrs(sum(w[j, l, d] for d in D) == sum(y[j, l, r, v] for r in R for v in V) for j in J for l in L)
@@ -102,7 +102,7 @@ m.addConstrs(b[v, r] * M >= y[j, l, r , v] for j in J for r in R for v in V for 
 # Un lote se puede cosechar solo entre día óptimo +7 y día óptimo -7
 for l in lotes:
     for d in D:
-        if d in range(lotes[l].opt-7,lotes[l].opt + 8):
+        if d not in range(lotes[l].opt-7,lotes[l].opt + 8):
             m.addConstr(x[l, d] == 0)
 
 # Máximo se produce la demanda (incluyendo mermas) por vino
