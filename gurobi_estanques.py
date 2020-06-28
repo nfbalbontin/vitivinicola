@@ -40,7 +40,7 @@ m = Model("planificacion_estanques", env=e)
 
 """
 x_lde : binaria: 1 si se cosecha el lote l el dia d para fermentar en el tanque e
-y_ejd : binaria: 1 si el tanque e comienza a a fermentar uva j el dia d
+y_ejd : binaria: 1 si el tanque e comienza a fermentar uva j el dia d
 z_ed : binaria: 1 si el tanque e esta aun fermentando el dia d
 w_ed : binaria: 1 si el tanque e termina el dia d
 r_ed : binaria: 1 si el tanque e comienza a fermentar diferentes lotes el dia d
@@ -80,7 +80,7 @@ for d in D:
       m.addConstr(sum(y[e, j, d] for j in J) + z[e, d-1] <= 1)
     m.addConstr(sum(y[e, j, d]for j in J) <= 1)
 
-m.addConstrs(z[e, 0] == 0 for e in E)
+m.addConstrs(z[e, -6] == 0 for e in E)
 
 orignumvars = m.NumVars
 m.feasRelaxS(2, False, False, True)

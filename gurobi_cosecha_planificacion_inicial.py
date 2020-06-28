@@ -1,5 +1,7 @@
 from gurobipy import *
 from poblacion_datos import poblar_lotes, poblar_uvas, poblar_recetas, poblar_vinos
+import re
+import pandas as pd
 
 # Diccionarios de datos
 lotes = poblar_lotes("docs/vitivinicola.xlsx")
@@ -36,7 +38,7 @@ m = Model("planificacion_cosecha", env=e)
 """ 
 x_ld : binaria que toma valor 1 si se decide comprar el lote l el día d
 w_jld: cantidad de uva j del lote l cosechada el día d en kilogramos
-y_jlrv: cantidad de uva j  del lote l cosechado el día d que se usa para hacer la receta r del vino v
+y_jlrv: cantidad de uva j  del lote l que se usa para hacer la receta r del vino v
 b_vr: cantidad de vino v hecho con la receta r
 t_v: cantidad total del vino v producida 
 """
@@ -210,24 +212,59 @@ m.optimize()
 print(f"Obj: {m.objVal}")
 
 # para mostrar el valor de todas las variables distintas de cero
+var_dict = {}
+recetas_dict = {}
+vinos_dict = {}
 for v in m.getVars():
-    if round(v.x) != 0:
-        print(v.varName, v.X)
+  if round(v.x) != 0: 
+    print(v.varName, v.X)
+    if round(v.x) != 0 and 'x_ld' in v.varName:
+      lote_dia = re.search("(?<=\[)(.*)(?=\])", v.varName).group()
+      lote_y_dia = lote_dia.split(',')
+      var_dict[lote_y_dia[0]] = {'dia': lote_y_dia[1]}
+    if round(v.x) != 0 and 'w_jld' in v.varName: 
+      cant_uva = re.search("(?<=\[)(.*)(?=\])", v.varName).group()
+      uva_lote_dia = cant_uva.split(',')
+      var_dict[uva_lote_dia[1]]['cantidad'] = v.X
+    if round(v.x) != 0 and 'y_jlrv' in v.varName: 
+      cant_receta = re.search("(?<=\[)(.*)(?=\])", v.varName).group()
+      uva_lote_receta_vino = cant_receta.split(',')
+      if 'cantidad_x_receta' in var_dict[uva_lote_receta_vino[1]]:
+        var_dict[uva_lote_receta_vino[1]]['cantidad_x_receta'][uva_lote_receta_vino[2]] = v.X
+      else: 
+         var_dict[uva_lote_receta_vino[1]]['cantidad_x_receta'] = {uva_lote_receta_vino[2]: v.X}
+    if round(v.x) != 0 and 'b_vr' in v.varName: 
+        cant_vino_r = re.search("(?<=\[)(.*)(?=\])", v.varName).group()
+        vino_receta = cant_vino_r.split(',')
+        recetas_dict[vino_receta[1]] = v.X
+    if round(v.X) != 0 and 't_v' in v.varName: 
+        cant_vino = re.search("(?<=\[)(.*)(?=\])", v.varName).group()
+        vino_receta = cant_vino.split(',')
+        vinos_dict[vino_receta[0]] = v.X
 
-# para mostrar el valor de las variables x distintas de cero
-'''
-print("Lotes comprados:")
-for indice in x:
-    if x[indice].x != 0:
-        print(x[indice].varName, x[indice].x)
-'''
+resultados_lotes = []
+for var in var_dict:
+  recetas = {'A1': 6, 'A2': 7, 'B1': 8, 'B2': 9, 'B3': 10, 'C1': 11, 'D1': 12, 'D2': 13, 'E1': 14, 'E2': 15}
+  resultado = [var, lotes[var].opt, var_dict[var]['dia'], lotes[var].p_alcoholico(int(var_dict[var]['dia'])), lotes[var].calidad_precio(int(var_dict[var]['dia'])), var_dict[var]['cantidad'], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  for receta in var_dict[var]['cantidad_x_receta']: 
+    resultado[recetas[receta]] = var_dict[var]['cantidad_x_receta'][receta]
+  resultados_lotes.append(resultado)
+resultados_lotes.sort(key=lambda x: x[2])
+lotes_df = pd.DataFrame(resultados_lotes, columns = ['Lote', 'Dia Optimo', 'Dia Cosechado', 'Potencial Alcoholico','Ponderador', 'Cantidad Producida', 'A1', 'A2', 'B1', 'B2', 'B3', 'C1', 'D1', 'D2', 'E1', 'E2'])
+lotes_df.to_excel('docs/resultados_lotes.xlsx', sheet_name="resultados_lotes")  
 
-# para mostrar el valor de las variables t distintas de cero
-'''
-print("Vino producido:")
-for indice in t:
-    print(t[indice].varName, t[indice].x)
-'''
+resultados_receta = []
+for receta in recetas_dict: 
+  resultado = [receta, recetas_dict[receta]]
+  resultados_receta.append(resultado)
+recetas_df = pd.DataFrame(resultados_receta, columns = ['Receta', 'Cantidad'])
+recetas_df.to_excel('docs/resultados_recetas.xlsx', sheet_name="resultados_receta")  
+
+resultados_vinos = []
+for vino in vinos_dict: 
+  resultado = [vino, vinos_dict[vino]]
+  resultados_vinos.append(resultado)
+vinos_df = pd.DataFrame(resultados_vinos, columns = ['Vino', 'Cantidad'])
+vinos_df.to_excel('docs/resultados_vinos.xlsx', sheet_name="resultados_vinos")  
 
 
-# m.write('example.lp')
