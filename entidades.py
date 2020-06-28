@@ -118,14 +118,13 @@ class Lote:
         self.lluvias = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.peso = self.prom_peso_recetas()
 
-    @property 
-    def calidad_precio(self): 
-        print("POTENCIAL ALCOHOLICO: {}".format(self.p_alcoholico(self.calidad_max(0) - (1 - math.exp( - self.tiempo/self.nu)))))
+    def calidad_precio(self, dia_cosechado): 
         # self.prom_peso_recetas*self.p_alcoholico
-        return float(1+self.peso)*self.p_alcoholico((self.calidad_max(0) - (1 - math.exp( - self.tiempo/self.nu))))/(self.precio*self.dias_lluvia_prom)
+        return float(1+self.peso)*self.p_alcoholico(dia_cosechado)/(self.precio*self.dias_lluvia_prom)
 
-    def p_alcoholico(self, calidad):
-        return 0.62*self.brix*calidad
+    def p_alcoholico(self, dia_cosechado):
+        rango = dia_cosechado - self.opt
+        return 0.62*self.brix*(self.calidad_max(rango) - (1 - math.exp( - self.tiempo/self.nu)))
 
     def prom_peso_recetas(self): 
         if self.tipo_u == 'J_1': 
@@ -190,7 +189,11 @@ class Lote:
             llovio = 0
             for i in range(rango + 7): 
                 llovio += self.lluvias[i]
-            costo= (self.precio/(self.calidad_max(rango)-llovio*0.1 - (1 - math.exp(-self.tiempo/self.nu))) - self.precio)* self.tn*1000
+            calidad = self.calidad_max(rango)-llovio*0.1 - (1 - math.exp(-self.tiempo/self.nu))
+            print("Calidad: {}".format(calidad))
+            print("Precio: {}".format(self.precio))
+            print("Precio/Calidad: {}".format(abs(self.precio/calidad) - self.precio))
+            costo= abs((self.precio/calidad) - self.precio)* self.tn*1000
             """
             print("LOTE: {}\n".format(self.codigo))
             print("DIA: {}\n".format(dia))
