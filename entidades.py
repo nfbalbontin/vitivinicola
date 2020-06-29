@@ -122,9 +122,12 @@ class Lote:
         # self.prom_peso_recetas*self.p_alcoholico
         return float(1+self.peso)*self.p_alcoholico(dia_cosechado)/(self.precio*self.dias_lluvia_prom)
 
-    def p_alcoholico(self, dia_cosechado):
+    def p_alcoholico(self, dia_cosechado, tiempo=0):
         rango = dia_cosechado - self.opt
-        return 0.62*self.brix*(self.calidad_max(rango) - (1 - math.exp( - self.tiempo/self.nu)))
+        llovio = 0
+        for i in range(rango + 7): 
+            llovio += self.lluvias[i]
+        return 0.62*self.brix*(self.calidad_max(rango)-llovio*0.1 - (1 - math.exp(-(self.tiempo+tiempo)/self.nu)))
 
     def prom_peso_recetas(self): 
         if self.tipo_u == 'J_1': 
@@ -190,9 +193,6 @@ class Lote:
             for i in range(rango + 7): 
                 llovio += self.lluvias[i]
             calidad = self.calidad_max(rango)-llovio*0.1 - (1 - math.exp(-self.tiempo/self.nu))
-            print("Calidad: {}".format(calidad))
-            print("Precio: {}".format(self.precio))
-            print("Precio/Calidad: {}".format(abs(self.precio/calidad) - self.precio))
             costo= abs((self.precio/calidad) - self.precio)* self.tn*1000
             """
             print("LOTE: {}\n".format(self.codigo))
@@ -312,8 +312,37 @@ class Receta:
         self.J8 = J8
 
 class Estanque:
-    def __init__(self, nombre, capacidad):
+    def __init__(self, nombre):
         self.tipo = nombre
+        self.tiempo = 9
+        self.disponible = True
+        self.lotes = []
+
+class Estanques:
+    def __init__(self, tipo, capacidad, estanques): 
+        self.tipo = tipo 
         self.capacidad = capacidad
+        self.estanques = estanques
 
+    @property
+    def disponibilidad(self): 
+        disp = 0
+        for e in self.estanques: 
+            if e.disponible == True: 
+                disp += 1
+        return disp
 
+    def fermentar(self, cantidad_estanques, lote): 
+        cantidad_est = cantidad_estanques
+        pos = 0
+        for e in self.estanques: 
+            if e.disponible == True: 
+                print('FERMENTANDO EN ESTANQUE {}{}'.format(self.tipo, pos))
+                e.disponible = False
+                e.lotes.append(lote)
+                cantidad_est -= 1
+            if cantidad_est == 0: 
+                break 
+            pos += 1
+                
+        

@@ -2,6 +2,7 @@ from gurobipy import *
 from poblacion_datos import poblar_lotes, poblar_uvas, poblar_recetas, poblar_vinos
 import re
 import pandas as pd
+import json 
 
 # Diccionarios de datos
 lotes = poblar_lotes("docs/vitivinicola.xlsx")
@@ -30,7 +31,7 @@ NOTA: el e es para que corra una cantidad de segundos específica. Si se corta a
 pero si el gap es bajo está cerca del óptimo.
 """
 e = gurobipy.Env()
-e.setParam("TimeLimit", 30)
+e.setParam("TimeLimit",30)
 m = Model("planificacion_cosecha", env=e)
 # m= Model('planificacion_cosecha')
 
@@ -52,8 +53,8 @@ t = m.addVars(V, vtype=GRB.CONTINUOUS, name="t_v")
 lambda_1= 0.999999999999999999995 #probar con 0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 0.9 y 1. Elegir el mejor resultado
 M = 1000000000000000  # número muy grande
 porcentaje_post_merma = 0.498
-porcentaje_post_merma_2 = 0.52  # hasta clarificación
-y_max = (10000 / porcentaje_post_merma_2) * 15  # capacidad máxima de fábrica en un día, calibrable (15 horas de producción)
+porcentaje_post_merma_2 = 0.524875  # hasta clarificación
+y_max = (10000 / porcentaje_post_merma_2) * 13  # capacidad máxima de fábrica en un día, calibrable (15 horas de producción)
 relacion = {}  # 1 si la uva j esta en el lote l
 for uva in uvas:
     for lote in lotes:
@@ -61,11 +62,11 @@ for uva in uvas:
             relacion[uva, lote] = 1
         else:
             relacion[uva, lote] = 0
-demanda_a= vinos["A"].volumen * 1333 / porcentaje_post_merma
-demanda_b= vinos["B"].volumen * 1333 / porcentaje_post_merma
-demanda_c= vinos["C"].volumen * 1333 / porcentaje_post_merma
-demanda_d= vinos["D"].volumen * 1333 / porcentaje_post_merma
-demanda_e= vinos["E"].volumen * 1333 / porcentaje_post_merma
+demanda_a= vinos["A"].volumen * 1250 / porcentaje_post_merma
+demanda_b= vinos["B"].volumen * 1250 / porcentaje_post_merma
+demanda_c= vinos["C"].volumen * 1250 / porcentaje_post_merma
+demanda_d= vinos["D"].volumen * 1250 / porcentaje_post_merma
+demanda_e= vinos["E"].volumen * 1250 / porcentaje_post_merma
 
 # Función Objetivo
 m.setObjective((2.8 * t["A"] + 3.1 * t["B"] + 3.05 * t["C"] + 2.7 * t["D"] + 2.4 * t["E"]
@@ -208,63 +209,72 @@ m.addConstr(sum(y["J_7", l, "E2", "E"] for l in L) == 0.15 * b["E", "E2"])
 m.addConstr(sum(y["J_8", l, "E2", "E"] for l in L) == 0.05 * b["E", "E2"])
 
 m.optimize()
-
 print(f"Obj: {m.objVal}")
 
-# para mostrar el valor de todas las variables distintas de cero
-var_dict = {}
-recetas_dict = {}
-vinos_dict = {}
-for v in m.getVars():
-  if round(v.x) != 0: 
-    print(v.varName, v.X)
-    if round(v.x) != 0 and 'x_ld' in v.varName:
+def generate_dicts(type_dict, vars):
+  var_dict = {}
+  for v in vars:
+    if round(v.x) != 0 and 'x_ld' in v.varName and type_dict == 'lotes':
       lote_dia = re.search("(?<=\[)(.*)(?=\])", v.varName).group()
       lote_y_dia = lote_dia.split(',')
-      var_dict[lote_y_dia[0]] = {'dia': lote_y_dia[1]}
-    if round(v.x) != 0 and 'w_jld' in v.varName: 
+      var_dict[lote_y_dia[0]] = {'dia_c': lote_y_dia[1]}
+    if round(v.x) != 0 and 'w_jld' in v.varName and type_dict == 'lotes': 
       cant_uva = re.search("(?<=\[)(.*)(?=\])", v.varName).group()
       uva_lote_dia = cant_uva.split(',')
-      var_dict[uva_lote_dia[1]]['cantidad'] = v.X
-    if round(v.x) != 0 and 'y_jlrv' in v.varName: 
+      var_dict[uva_lote_dia[1]]['tipo'] = uva_lote_dia[0]
+      var_dict[uva_lote_dia[1]]['cantidad'] = int(v.X)*porcentaje_post_merma_2
+    if round(v.x) != 0 and 'y_jlrv' in v.varName and type_dict == 'lotes': 
       cant_receta = re.search("(?<=\[)(.*)(?=\])", v.varName).group()
       uva_lote_receta_vino = cant_receta.split(',')
       if 'cantidad_x_receta' in var_dict[uva_lote_receta_vino[1]]:
-        var_dict[uva_lote_receta_vino[1]]['cantidad_x_receta'][uva_lote_receta_vino[2]] = v.X
+        var_dict[uva_lote_receta_vino[1]]['cantidad_x_receta'][uva_lote_receta_vino[2]] = int(v.X)
       else: 
-         var_dict[uva_lote_receta_vino[1]]['cantidad_x_receta'] = {uva_lote_receta_vino[2]: v.X}
-    if round(v.x) != 0 and 'b_vr' in v.varName: 
+        var_dict[uva_lote_receta_vino[1]]['cantidad_x_receta'] = {uva_lote_receta_vino[2]: int(v.X)}
+    if round(v.x) != 0 and 'b_vr' in v.varName and type_dict == 'recetas': 
         cant_vino_r = re.search("(?<=\[)(.*)(?=\])", v.varName).group()
         vino_receta = cant_vino_r.split(',')
-        recetas_dict[vino_receta[1]] = v.X
-    if round(v.X) != 0 and 't_v' in v.varName: 
+        var_dict[vino_receta[1]] = int(v.X)
+    if round(v.X) != 0 and 't_v' in v.varName and type_dict == 'vinos': 
         cant_vino = re.search("(?<=\[)(.*)(?=\])", v.varName).group()
         vino_receta = cant_vino.split(',')
-        vinos_dict[vino_receta[0]] = v.X
+        var_dict[vino_receta[0]] = int(v.X)
+  return var_dict
 
-resultados_lotes = []
-for var in var_dict:
-  recetas = {'A1': 6, 'A2': 7, 'B1': 8, 'B2': 9, 'B3': 10, 'C1': 11, 'D1': 12, 'D2': 13, 'E1': 14, 'E2': 15}
-  resultado = [var, lotes[var].opt, var_dict[var]['dia'], lotes[var].p_alcoholico(int(var_dict[var]['dia'])), lotes[var].calidad_precio(int(var_dict[var]['dia'])), var_dict[var]['cantidad'], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-  for receta in var_dict[var]['cantidad_x_receta']: 
-    resultado[recetas[receta]] = var_dict[var]['cantidad_x_receta'][receta]
-  resultados_lotes.append(resultado)
-resultados_lotes.sort(key=lambda x: x[2])
-lotes_df = pd.DataFrame(resultados_lotes, columns = ['Lote', 'Dia Optimo', 'Dia Cosechado', 'Potencial Alcoholico','Ponderador', 'Cantidad Producida', 'A1', 'A2', 'B1', 'B2', 'B3', 'C1', 'D1', 'D2', 'E1', 'E2'])
-lotes_df.to_excel('docs/resultados_lotes.xlsx', sheet_name="resultados_lotes")  
+def gen_excel_lotes(l_dict):
+  resultados_lotes = []
+  for var in l_dict:
+    recetas = {'A1': 6, 'A2': 7, 'B1': 8, 'B2': 9, 'B3': 10, 'C1': 11, 'D1': 12, 'D2': 13, 'E1': 14, 'E2': 15}
+    resultado = [var, lotes[var].opt, l_dict[var]['dia_c'], lotes[var].p_alcoholico(int(l_dict[var]['dia_c'])), lotes[var].calidad_precio(int(l_dict[var]['dia_c'])), l_dict[var]['cantidad'], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    for receta in l_dict[var]['cantidad_x_receta']: 
+      resultado[recetas[receta]] = l_dict[var]['cantidad_x_receta'][receta]
+    resultados_lotes.append(resultado)
+  resultados_lotes.sort(key=lambda x: x[2])
+  lotes_df = pd.DataFrame(resultados_lotes, columns = ['Lote', 'Dia Optimo', 'Dia Cosechado', 'Potencial Alcoholico','Ponderador', 'Cantidad Producida', 'A1', 'A2', 'B1', 'B2', 'B3', 'C1', 'D1', 'D2', 'E1', 'E2'])
+  lotes_df.to_excel('docs/resultados_lotes.xlsx', sheet_name="resultados_lotes")  
 
-resultados_receta = []
-for receta in recetas_dict: 
-  resultado = [receta, recetas_dict[receta]]
-  resultados_receta.append(resultado)
-recetas_df = pd.DataFrame(resultados_receta, columns = ['Receta', 'Cantidad'])
-recetas_df.to_excel('docs/resultados_recetas.xlsx', sheet_name="resultados_receta")  
 
-resultados_vinos = []
-for vino in vinos_dict: 
-  resultado = [vino, vinos_dict[vino]]
-  resultados_vinos.append(resultado)
-vinos_df = pd.DataFrame(resultados_vinos, columns = ['Vino', 'Cantidad'])
-vinos_df.to_excel('docs/resultados_vinos.xlsx', sheet_name="resultados_vinos")  
+def gen_excel(v_type, t_dict): 
+  resultados = []
+  for var in t_dict: 
+    resultado = [var, t_dict[var]]
+    resultados.append(resultado)
+  df = pd.DataFrame(resultados, columns = [v_type, 'Cantidad'])
+  df.to_excel('docs/resultados_{}.xlsx'.format(v_type), sheet_name="resultados_{}".format(v_type))  
+
+var_dict = generate_dicts('lotes', m.getVars())
+rep_dict = generate_dicts('recetas', m.getVars())
+vino_dict = generate_dicts('vinos', m.getVars())
+
+def w_dicts(v_dict, name): 
+  with open('docs/{}_dict.txt'.format(name), 'w') as fl: 
+    fl.write(json.dumps(v_dict))
+
+w_dicts(var_dict, 'lotes')
+w_dicts(rep_dict, 'recetas')
+w_dicts(vino_dict, 'vinos')
+
+gen_excel_lotes(var_dict)
+gen_excel('receta', rep_dict)
+gen_excel('vino',vino_dict)
 
 

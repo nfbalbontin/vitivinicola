@@ -1,4 +1,4 @@
-from entidades import Lote, Uva, Vino, Receta, Estanque
+from entidades import Lote, Uva, Vino, Receta, Estanque, Estanques
 import pandas as pd
 
 
@@ -41,14 +41,16 @@ def poblar_recetas(path):
     return recetas
 
 def poblar_estanques(path):
-    estanques={}
+    coleccion_estanques = {}
     df_estanques= pd.read_excel(path, sheet_name='estanques',encoding="utf-8", usecols='A:D', 
                                                 dtype={'TK':str,'#':int,'cap(m3)':int,'(m3)':int})
     for row in range(df_estanques['TK'].count()):
+        estanques=[]
         for estanque in range(int(df_estanques.iloc[row, 1])):
-            estanques[df_estanques.iloc[row,0]+str(estanque + 1)] = Estanque(df_estanques.iloc[row,0] + str(estanque + 1), 
-            df_estanques.iloc[row, 2])
-    return estanques
+            estanques.append(Estanque(df_estanques.iloc[row,0] + str(estanque + 1)))
+        coleccion_estanques[df_estanques.iloc[row, 0]] = Estanques(df_estanques.iloc[row, 0],df_estanques.iloc[row, 2], estanques)
+        
+    return coleccion_estanques
 
 #poblar_lotes('docs/vitivinicola.xlsx')
 #poblar_uvas('docs/vitivinicola.xlsx')
