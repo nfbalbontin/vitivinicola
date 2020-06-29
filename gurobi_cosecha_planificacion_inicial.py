@@ -112,8 +112,8 @@ m.addConstrs(b[v, r] * M >= y[j, l, r , v] for j in J for r in R for v in V for 
 for l in lotes:
     for d in D:
         if d not in range(lotes[l].opt-7,lotes[l].opt + 8):
-            m.addConstr(x[l, d] == 0)
-        elif lotes[l].p_alcoholico(d) < 12.5:
+          m.addConstr(x[l, d] == 0)
+        elif lotes[l].p_alcoholico(d) < 13:
         # No se pueden cosechar lotes con potencial alcohólico menor que 12
           m.addConstr(x[l, d] == 0)
 

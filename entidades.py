@@ -307,6 +307,7 @@ class Receta:
     def __init__(self, tipo_vino, id_receta, J1, J2, J3, J4, J5, J6, J7, J8):
         self.tipo_vino= tipo_vino
         self.id= id_receta
+        self.ponderador = {'J_1': J1, 'J_2': J2, 'J_3': J3, 'J_3': J3, 'J_4': J4, 'J_5': J5, 'J_6': J6, 'J_7': J7, 'J_8': J8}
         self.J1 = J1
         self.J2 = J2
         self.J3 = J3
