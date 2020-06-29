@@ -149,8 +149,8 @@ for dia in D:
   for l in lote_dict: 
     if int(lote_dict[l]['dia_c']) == dia: 
       print("COSECHA LOTE {}".format(l))
-      print("CANTIDAD {}".format(str(math.ceil(math.ceil(int(lote_dict[l]['cantidad'])/1000)/5)*5)))
-      est = set_estanque(str(math.ceil(math.ceil(int(lote_dict[l]['cantidad'])/1000)/5)*5), l)
+      print("CANTIDAD {}".format(str(math.ceil(math.ceil(int(lote_dict[l]['cantidad'])/1250)/5)*5)))
+      est = set_estanque(str(math.ceil(math.ceil(int(lote_dict[l]['cantidad'])/1250)/5)*5), l)
       lote_dict[l]['producido'] = 0
       if not est: 
         print("NO SE PUDO ASIGNAR UN ESTANQUE")
@@ -191,18 +191,22 @@ def ponderar_lotes():
         #print("POTENCIAL ALCOHOLICO {}: {}".format(pon2, ponderadores[pon2][3]))
         #print("POTENCIAL ALCOHOLICO PONDERADO {}: {}".format(pon2, ponderadores[pon2][3]*ponderadores[pon2][2]))
         lote_dict[l]['p_alcoholico'] += ponderadores[pon2][2]*ponderadores[pon2][3] 
+    cantidad = lote_dict[l]['cantidad']
+    lote_dict[l]['cantidad_x_receta_estanques'] = {}
+    for rec in lote_dict[l]['cantidad_x_receta']: 
+      lote_dict[l]['cantidad_x_receta_estanques'][rec] = (lote_dict[l]['cantidad_x_receta'][rec]/cantidad)*lote_dict[l]['producido']
   return lote_dict
 
 def gen_excel_lotes(l_dict):
   resultados_lotes = []
   for var in l_dict:
     recetas = {'A1': 7, 'A2': 8, 'B1': 9, 'B2': 10, 'B3': 11, 'C1': 12, 'D1': 13, 'D2': 14, 'E1': 15, 'E2': 16}
-    resultado = [var, l_dict[var]['dia_opt'], l_dict[var]['dia_c'], l_dict[var]['cantidad'], l_dict[var]['producido'], l_dict[var]['dias_lluvia'], l_dict[var]['p_alcoholico'] , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    resultado = [var, l_dict[var]['dia_opt'], l_dict[var]['dia_c'], l_dict[var]['cantidad'], l_dict[var]['producido'], l_dict[var]['dias_lluvia'], l_dict[var]['p_alcoholico'] , l_dict[var]['costo'], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     for receta in l_dict[var]['cantidad_x_receta']: 
       resultado[recetas[receta]] = l_dict[var]['cantidad_x_receta'][receta]
     resultados_lotes.append(resultado)
   resultados_lotes.sort(key=lambda x: x[2])
-  lotes_df = pd.DataFrame(resultados_lotes, columns = ['Lote', 'Dia Optimo', 'Dia Cosechado', 'Canitdad a Producir', 'Cantidad Producida', 'Dias Lluvia', 'Potencial Alcoholico', 'A1', 'A2', 'B1', 'B2', 'B3', 'C1', 'D1', 'D2', 'E1', 'E2'])
+  lotes_df = pd.DataFrame(resultados_lotes, columns = ['Lote', 'Dia Optimo', 'Dia Cosechado', 'Canitdad a Producir', 'Cantidad Producida', 'Dias Lluvia', 'Potencial Alcoholico', 'Costo', 'A1', 'A2', 'B1', 'B2', 'B3', 'C1', 'D1', 'D2', 'E1', 'E2'])
   lotes_df.to_excel('docs/resultados_lotes_estanques.xlsx', sheet_name="resultados_lotes")  
 
 def w_dicts(v_dict, name): 

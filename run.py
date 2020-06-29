@@ -9,21 +9,23 @@ if __name__ == '__main__':
     dict_results = {}
     simulaciones = 1000
     while iteracion < simulaciones: 
-        sim = Simulacion(datetime(2020, 1, 1), 94, 'docs/vitivinicola.xlsx')
+        sim = Simulacion(datetime(2020, 1, 1), 94)
         sim.run()
-        if iteracion == 0: 
-            for i in sim.lotes:  
-                dict_results[i] = [sim.lotes[i].dias_lluvia["antes"],  sim.lotes[i].dias_lluvia["despues"]]
-        else: 
-            for i in sim.lotes: 
-                dict_results[i][0] += sim.lotes[i].dias_lluvia["antes"]
-                dict_results[i][1] += sim.lotes[i].dias_lluvia["despues"]
+        for i in sim.lotes: 
+            if iteracion == 0: 
+                dict_results[i] = sim.lotes[i].dias_lluvia
+            else: 
+                for j in range(len(dict_results[i])):
+                    dict_results[i][j] += sim.lotes[i].dias_lluvia[j]
         iteracion += 1 
     lotes_list = list(dict_results.keys())
     cantidad_lluvia = []
     for i in lotes_list: 
-        cantidad_lluvia.append([i,dict_results[i][0]/simulaciones, dict_results[i][0]/simulaciones])
-    lotes_df = pd.DataFrame(cantidad_lluvia, columns = ['Lote','7 Dias Antes Prom','7 Dias Despues Prom'])
+        lista = []
+        for j in range(len(dict_results[i])): 
+            lista.append(dict_results[i][j]/simulaciones)
+        cantidad_lluvia.append(lista)
+    lotes_df = pd.DataFrame(cantidad_lluvia, columns = ['-7','-6','-5','-4', '-3','-2','-1','0','1','2','3','4','5','6','7'])
     lotes_df.insert(0, "Lote", lotes_list, True)
     lotes_df.to_excel('docs/lluvia_lotes_2.xlsx', sheet_name="lluvias")   
     final = time.time()
