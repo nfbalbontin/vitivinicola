@@ -249,6 +249,7 @@ def generate_dicts(type_dict, vars, lotes=False):
         var_dict[vino_receta[0]] = int(v.X)
   if type_dict == 'lotes':
     for l in var_dict: 
+      var_dict[l]['costo'] = lotes[l].precio*lotes[l].tn
       var_dict[l]['dia_opt'] = lotes[l].opt
       int_value = int(var_dict[l]['dia_c'])
       rango = int_value - lotes[l].opt
