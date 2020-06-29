@@ -25,18 +25,6 @@ V = [vino for vino in vinos]
 R = [receta for receta in recetas]
 E = [estanque for estanque in estanques]
 
-# Almacenamos en una lista de listas todos los lotes que son de la misma tipo de uva j
-L_j = [[], [], [], [], [], [], [], []]
-pos = 0
-for j in J: 
-  for lote in sel_lotes: 
-    if sel_lotes[lote].tipo_u == j: 
-      L_j[pos].append(sel_lotes[lote])
-  pos += 1
-
-e = gurobipy.Env()
-e.setParam("TimeLimit", 120)
-m = Model("planificacion_estanques", env=e)
 
 """
 x_lde : binaria: 1 si se cosecha el lote l el dia d para fermentar en el tanque e
