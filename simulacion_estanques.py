@@ -131,23 +131,87 @@ pos_estanques = gen_posibles_estanques()
 
 for dia in D: 
   print("----------------------------DIA {}------------------------------".format(dia))
+  estanques_desocupados = []
   for tipo in coleccion_estanques: 
     pos = 0
     for estanque in coleccion_estanques[tipo].estanques: 
+      if estanque.disponible == True: 
+        estanques_desocupados.append(tipo+str(pos))
       if estanque.disponible == False: 
         estanque.tiempo -= 1
       if estanque.tiempo == 0: 
         estanque.tiempo = 9
         estanque.disponible = True
+        estanques_desocupados.append(tipo+str(pos))
         print("ESTANQUE {0}{1} DESOCUPADO".format(tipo, pos))
       pos += 1 
+  print("ESTANQUES DESOCUPADOS {}".format(estanques_desocupados))
   for l in lote_dict: 
     if int(lote_dict[l]['dia_c']) == dia: 
       print("COSECHA LOTE {}".format(l))
       print("CANTIDAD {}".format(str(math.ceil(math.ceil(int(lote_dict[l]['cantidad'])/1000)/5)*5)))
-      est = set_estanque(str(math.ceil(math.ceil(int(lote_dict[l]['cantidad'])/1000)/5)*5), lote_dict[l])
+      est = set_estanque(str(math.ceil(math.ceil(int(lote_dict[l]['cantidad'])/1000)/5)*5), l)
+      lote_dict[l]['producido'] = 0
       if not est: 
         print("NO SE PUDO ASIGNAR UN ESTANQUE")
+        lote_dict[l]['estanques'] = {'T1': 0, 'T2': 0, 'T3': 0}
+      else: 
+        cantidad = {'T1': 0, 'T2': 0, 'T3': 0}
+        for tipo in coleccion_estanques: 
+          for estanque in coleccion_estanques[tipo].estanques: 
+            if l in estanque.lotes: 
+              cantidad[tipo] += 1
+        for can in cantidad: 
+          if can == 'T1': 
+            lote_dict[l]['producido'] += cantidad[can]*20
+          elif can == 'T2': 
+            lote_dict[l]['producido'] += cantidad[can]*10
+          else: 
+            lote_dict[l]['producido'] += cantidad[can]*15
+        lote_dict[l]['estanques'] = cantidad
+
+def ponderar_lotes():
+  for l in lote_dict: 
+    lote_dict[l]['p_alcoholico'] = 0
+    if lote_dict[l]['producido'] != 0: 
+      # Capacidad estanque | Tiempo hasta fermentar | ponderador | p_alcoholico
+      ponderadores = {'T1': [20, 20/6.2985, 0, 0], 'T2': [10, 10/6.2985, 0, 0], 'T3': [15, 15/6.2985, 0, 0]}
+      for e in lote_dict[l]['estanques']: 
+        ponderadores[e][2] = (lote_dict[l]['estanques'][e]*ponderadores[e][0])/lote_dict[l]['producido']
+        #print("ESTANQUES {}".format(lote_dict[l]['estanques']))
+        #print("PRODUCIDO {} vs PRODUCIR {}".format(lote_dict[l]['producido'], lote_dict[l]['cantidad']))
+        #print("PONDERADORES {}: {}".format(e, ponderadores[e][2]))
+      for pon1 in ponderadores: 
+        ponderadores[pon1][3] = lotes[l].p_alcoholico(int(lote_dict[l]['dia_c']), ponderadores[pon1][1], lote_dict[l]['dias_lluvia'])
+      #print("POTENCIAL ALCOHOLICO {}: {}".format(e, ponderadores[e][3]))
+        #print("POTENCIAL ALCOHOLICO PONDERADO {}: {}".format(e, ponderadores[e][3]))
+      for pon2 in ponderadores:
+        #print(pon2)
+        #print("PONDERADOR {}: {}".format(pon2, ponderadores[pon2][2]))
+        #print("POTENCIAL ALCOHOLICO {}: {}".format(pon2, ponderadores[pon2][3]))
+        #print("POTENCIAL ALCOHOLICO PONDERADO {}: {}".format(pon2, ponderadores[pon2][3]*ponderadores[pon2][2]))
+        lote_dict[l]['p_alcoholico'] += ponderadores[pon2][2]*ponderadores[pon2][3] 
+  return lote_dict
+
+def gen_excel_lotes(l_dict):
+  resultados_lotes = []
+  for var in l_dict:
+    recetas = {'A1': 7, 'A2': 8, 'B1': 9, 'B2': 10, 'B3': 11, 'C1': 12, 'D1': 13, 'D2': 14, 'E1': 15, 'E2': 16}
+    resultado = [var, l_dict[var]['dia_opt'], l_dict[var]['dia_c'], l_dict[var]['cantidad'], l_dict[var]['producido'], l_dict[var]['dias_lluvia'], l_dict[var]['p_alcoholico'] , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    for receta in l_dict[var]['cantidad_x_receta']: 
+      resultado[recetas[receta]] = l_dict[var]['cantidad_x_receta'][receta]
+    resultados_lotes.append(resultado)
+  resultados_lotes.sort(key=lambda x: x[2])
+  lotes_df = pd.DataFrame(resultados_lotes, columns = ['Lote', 'Dia Optimo', 'Dia Cosechado', 'Canitdad a Producir', 'Cantidad Producida', 'Dias Lluvia', 'Potencial Alcoholico', 'A1', 'A2', 'B1', 'B2', 'B3', 'C1', 'D1', 'D2', 'E1', 'E2'])
+  lotes_df.to_excel('docs/resultados_lotes_estanques.xlsx', sheet_name="resultados_lotes")  
+
+def w_dicts(v_dict, name): 
+  with open('docs/{}_estanques_dict.txt'.format(name), 'w') as fl: 
+    fl.write(json.dumps(v_dict))
+
+lote_dict = ponderar_lotes()
+w_dicts(lote_dict, 'lotes')
+gen_excel_lotes(lote_dict)
 
 
 

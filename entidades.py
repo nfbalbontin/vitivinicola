@@ -122,12 +122,15 @@ class Lote:
         # self.prom_peso_recetas*self.p_alcoholico
         return float(1+self.peso)*self.p_alcoholico(dia_cosechado)/(self.precio*self.dias_lluvia_prom)
 
-    def p_alcoholico(self, dia_cosechado, tiempo=0):
+    def p_alcoholico(self, dia_cosechado, tiempo=0, dias_lluvia=False):
         rango = dia_cosechado - self.opt
         llovio = 0
         for i in range(rango + 7): 
             llovio += self.lluvias[i]
-        return 0.62*self.brix*(self.calidad_max(rango)-llovio*0.1 - (1 - math.exp(-(self.tiempo+tiempo)/self.nu)))
+        if not dias_lluvia: 
+            return 0.62*self.brix*(self.calidad_max(rango)-llovio*0.1 - (1 - math.exp(-(self.tiempo+tiempo)/self.nu)))
+        else: 
+            return 0.62*self.brix*(self.calidad_max(rango)-dias_lluvia*0.1 - (1 - math.exp(-(self.tiempo+tiempo)/self.nu)))
 
     def prom_peso_recetas(self): 
         if self.tipo_u == 'J_1': 
