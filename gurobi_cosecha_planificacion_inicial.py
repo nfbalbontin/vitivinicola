@@ -50,26 +50,32 @@ b = m.addVars(V, R, vtype=GRB.CONTINUOUS, name="b_vr")
 t = m.addVars(V, vtype=GRB.CONTINUOUS, name="t_v")
 
 # Parámetros
-lambda_1= 0.999999999999999999995 #probar con 0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 0.9 y 1. Elegir el mejor resultado
 M = 1000000000000000  # número muy grande
-porcentaje_post_merma = 0.498
-porcentaje_post_merma_2 = 0.524875  # hasta clarificación
-y_max = (10000 / porcentaje_post_merma_2) * 13  # capacidad máxima de fábrica en un día, calibrable (15 horas de producción)
-relacion = {}  # 1 si la uva j esta en el lote l
+
+transformar_vol_kg = 1250
+porcentaje_post_merma = 0.498 # total
+porcentaje_post_merma_2 = 0.52  # hasta clarificación
+y_max = (12000) * 13  # capacidad máxima de fábrica en un día debido a cuellos de botella (13 horas de producción)
+
+relacion = {}  # 1 ssi la uva j esta en el lote l, 0 en otro caso.
 for uva in uvas:
     for lote in lotes:
         if uva == lote[0:3]:
             relacion[uva, lote] = 1
         else:
             relacion[uva, lote] = 0
-demanda_a= vinos["A"].volumen * 1250 / porcentaje_post_merma
-demanda_b= vinos["B"].volumen * 1250 / porcentaje_post_merma
-demanda_c= vinos["C"].volumen * 1250 / porcentaje_post_merma
-demanda_d= vinos["D"].volumen * 1250 / porcentaje_post_merma
-demanda_e= vinos["E"].volumen * 1250 / porcentaje_post_merma
+
+
+# Lo que se necesita comprar de uva en kg para que después de las perdidas de procesamiento quede la demanda de cada vino
+demanda_a= vinos["A"].volumen * transformar_vol_kg / porcentaje_post_merma
+demanda_b= vinos["B"].volumen * transformar_vol_kg / porcentaje_post_merma
+demanda_c= vinos["C"].volumen * transformar_vol_kg / porcentaje_post_merma
+demanda_d= vinos["D"].volumen * transformar_vol_kg / porcentaje_post_merma
+demanda_e= vinos["E"].volumen * transformar_vol_kg / porcentaje_post_merma
+
 
 # Función Objetivo
-m.setObjective((2.8 * t["A"] + 3.1 * t["B"] + 3.05 * t["C"] + 2.7 * t["D"] + 2.4 * t["E"]
+m.setObjective((vinos["A"].precio_2desv * t["A"] + vinos["B"].precio_2desv * t["B"] + vinos["C"].precio_2desv * t["C"] + vinos["D"].precio_2desv * t["D"] + vinos["E"].precio_2desv * t["E"]
     - sum(lotes[l].precio * lotes[l].tn * 1000 * x[l, d] for l in L for d in D)) - sum(lotes[l].calcular_costo(d) * x[l, d] for l in L for d in D), GRB.MAXIMIZE)
 
 
@@ -108,7 +114,13 @@ for l in lotes:
         if d not in range(lotes[l].opt-7,lotes[l].opt + 8):
             m.addConstr(x[l, d] == 0)
 
-# Máximo se produce la demanda (incluyendo mermas) por vino
+# No se pueden cosechar lotes con potencial alcohólico menor que 12
+for l in lotes:
+  for d in D:
+    if lotes[l].p_alcoholico(d) < 12:
+      m.addConstr(x[l, d] == 0)
+
+# Máximo se compran uvas para producir la demanda de cada vino
 m.addConstr(t["A"] <= demanda_a)
 m.addConstr(t["B"] <= demanda_b)
 m.addConstr(t["C"] <= demanda_c)
@@ -210,6 +222,7 @@ m.addConstr(sum(y["J_8", l, "E2", "E"] for l in L) == 0.05 * b["E", "E2"])
 
 m.optimize()
 print(f"Obj: {m.objVal}")
+
 
 def generate_dicts(type_dict, vars):
   var_dict = {}
