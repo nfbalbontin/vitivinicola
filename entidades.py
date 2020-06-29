@@ -9,7 +9,7 @@ import math
 seed(1)
 
 class Simulacion:
-    def __init__(self, datetime, dias_simulacion, path_excel):
+    def __init__(self, datetime, dias_simulacion):
         # usamos datetime para manejar temporalidad
         self.date = datetime
         #self.tiempo_actual = date
@@ -17,23 +17,22 @@ class Simulacion:
         self.hora_actual = 0
         #self.dias_totales = date + timedelta(days = dias_simulacion)
         self.dias_totales = dias_simulacion
-        self.lotes = self.poblar_lotes(path_excel)
-        self.uvas = self.poblar_uvas(path_excel)
-        self.vinos = self.poblar_vinos(path_excel)
-        self.recetas = self.poblar_recetas(path_excel)
-        self.estanques = self.poblar_estanques(path_excel)
-        # seteamos inputs de distribuciones y estructuras de la simulación
+        self.lotes = self.poblar_lotes('docs/vitivinicola.xlsx')
+       
 
     # motor de la simulacion 
     def run(self):
         while self.dia_actual < self.dias_totales:
             #print("\r\r\033[95m DIA {0}\033".format(self.date + timedelta(days = self.dia_actual)))
             for i in self.lotes: 
-                if self.lotes[i].opt - 7 <= self.dia_actual <= self.lotes[i].opt: 
-                    self.lotes[i].dias_lluvia["antes"] += self.lotes[i].evento_lluvia
-                elif self.lotes[i].opt < self.dia_actual <= self.lotes[i].opt + 7: 
-                    self.lotes[i].dias_lluvia["despues"] += self.lotes[i].evento_lluvia
-                   # print("\r\r{0}[0m el día: {1} [0m en el lote \033[93m{1}\033".format("\033[92m[Llueve]\033" if self.lotes[i].evento_lluvia == 1 else "\033[91m[No llueve]\033", self.date + timedelta(days = self.dia_actual), i))
+                rango = self.dia_actual - self.lotes[i].opt
+                if  -7 <= rango <= 7: 
+                    estado = self.lotes[i].evento_lluvia(rango)
+                    #if estado: 
+                        #print("LLUEVE EN EL LOTE {}".format(i))
+                    #else: 
+                        #print("NO LLUEVE EN EL LOTE {}".format(i))
+                   #print("\r\r{0}[0m el día: {1} [0m en el lote \033[93m{1}\033".format("\033[92m[Llueve]\033" if self.lotes[i].evento_lluvia == 1 else "\033[91m[No llueve]\033", self.date + timedelta(days = self.dia_actual), i))
                          #while self.hora_actual < 24: 
             #    self.hora_actual += 1
             self.dia_actual += 1 
@@ -41,51 +40,12 @@ class Simulacion:
   
     def poblar_lotes(self, path): 
         lotes = {}
-        df_lotes = pd.read_excel(path, sheet_name='lotes', encoding="utf-8", usecols='A:J', dtype={'Lote COD': str, 'Tipo UVA': str, 'Tn': int, 'Dia optimo cosecha': int, 'p_01': float, 'p_11': float, 'km a planta': int, '$/kg': float})
-        
+        df_lotes = pd.read_excel(path, sheet_name='lotes', encoding="utf-8", usecols='A:Z', dtype={'Lote COD': str, 'Tipo UVA': str, 'Tn': int, 'Dia optimo cosecha': int, 'p_01': float, 'p_11': float, 'km a planta': int, '$/kg': float})
         for row in range(df_lotes['Lote COD'].count()): 
-            lotes[df_lotes.iloc[row, 0]] = Lote(df_lotes.iloc[row, 0], df_lotes.iloc[row, 1], df_lotes.iloc[row, 2], 
-                                                df_lotes.iloc[row, 3], df_lotes.iloc[row, 4], df_lotes.iloc[row, 5], 
-                                                df_lotes.iloc[row, 6], df_lotes.iloc[row, 7], df_lotes.iloc[row, 8], df_lotes.iloc[row, 9])
+            lotes[df_lotes.iloc[row, 0]] = Lote(df_lotes.iloc[row, 0], df_lotes.iloc[row, 1], df_lotes.iloc[row, 2],df_lotes.iloc[row, 3],
+            df_lotes.iloc[row, 4], df_lotes.iloc[row, 5], df_lotes.iloc[row, 6], df_lotes.iloc[row, 7], df_lotes.iloc[row, 8],
+            df_lotes.iloc[row, 9], df_lotes.iloc[row, 10], df_lotes.iloc[row, 11])
         return lotes 
-
-    def poblar_uvas(self, path): 
-        uvas = {}
-        df_uvas = pd.read_excel(path, sheet_name='uvas', encoding="utf-8", usecols='A:G', 
-                                dtype={'Uva': str, 'nu': int, 'min': float, 'max': float, 'brix optimo': float, 
-                                        'q[t-7]': float, 'q[t+7]': float}) 
-        for row in range(df_uvas['Uva'].count()): 
-            uvas[df_uvas.iloc[row, 0]] = Uva(df_uvas.iloc[row, 0], df_uvas.iloc[row, 1], df_uvas.iloc[row, 2], 
-                                            df_uvas.iloc[row, 3], df_uvas.iloc[row, 4], df_uvas.iloc[row, 5],
-                                            df_uvas.iloc[row, 6])
-        return uvas       
-    
-    def poblar_vinos(self, path): 
-        vinos = {}
-        df_vinos = pd.read_excel(path, sheet_name='vinos', encoding="utf-8", usecols='A:E', 
-                                dtype={'Vino Tipo': str, 'Dist': str, 'media': float, 'dst': float, 'volumen': int})
-        for row in range(df_vinos['Vino Tipo'].count()): 
-            vinos[df_vinos.iloc[row, 0]] = Vino(df_vinos.iloc[row, 0], df_vinos.iloc[row, 1], df_vinos.iloc[row, 2], 
-                                            df_vinos.iloc[row, 3], df_vinos.iloc[row, 4])
-        return vinos 
-    
-    def poblar_recetas(self, path):
-        recetas={}
-        df_recetas = pd.read_excel(path, sheet_name='recetas', encoding="utf-8", usecols='A:J',  
-                                                    dtype={'k':str,'m':int,'J1':float,'J2':float,'J3':float,'J4':float,'J5':float,'J6':float,'J7':float,'J8':float})
-        for row in range(df_recetas['k'].count()):
-            recetas[df_recetas.iloc[row, 0], df_recetas.iloc[row, 1]]= Receta(df_recetas.iloc[row, 0], df_recetas.iloc[row, 1], df_recetas.iloc[row, 2], df_recetas.iloc[row, 3],
-                                            df_recetas.iloc[row, 4],df_recetas.iloc[row, 5], df_recetas.iloc[row, 6], df_recetas.iloc[row, 7], df_recetas.iloc[row, 8],df_recetas.iloc[row, 9])
-        return recetas
-    
-    def poblar_estanques(self, path):
-        estanques={}
-        df_estanques= pd.read_excel(path, sheet_name='estanques',encoding="utf-8", usecols='A:D', 
-                                                    dtype={'TK':str,'#':int,'cap(m3)':int,'(m3)':int})
-        for row in range(df_estanques['TK'].count()):
-            estanques[df_estanques.iloc[row,0]]=Estanque(df_estanques.iloc[row, 0], df_estanques.iloc[row, 1], df_estanques.iloc[row, 2], 
-                                            df_estanques.iloc[row, 3])
-        return estanques
 
 class Lote:
     def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio, t_hasta_ferm, nu, dias_lluvia_prom, brix):
@@ -114,10 +74,29 @@ class Lote:
         self.brix = brix
         self.nu = nu
         self.dias_lluvia_prom = dias_lluvia_prom
-        self.dias_lluvia = {"antes": 0, "despues": 0}
+        self.dias_lluvia = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.lluvias = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.peso = self.prom_peso_recetas()
 
+    def evento_lluvia(self, rango):
+        eventos= [1, 0]
+        if -8 < rango < 8:
+            # Si es el primer dia de evaluacion del lote, por lo que no hay registro anterior
+            if rango == -7: 
+                probabilidades = [self.p_01, (1-self.p_01)]
+            # Revisamos si llovio o no el dia anterior
+            else: 
+                if self.dias_lluvia[rango + 6] == 1:
+                    probabilidades = [self.p_11, (1-self.p_11)]
+                else:
+                    probabilidades = [self.p_01, (1-self.p_01)]
+            evento = np.random.choice(eventos,p=probabilidades)
+            # Si llueve, agregamos el evento de lluvia, sino no. 
+            if evento == 1: 
+                self.lluvias[rango + 7] = 1
+            for dia in self.lluvias[0:rango + 7]:
+                self.dias_lluvia[rango + 7] += dia
+                
     def calidad_precio(self, dia_cosechado): 
         # self.prom_peso_recetas*self.p_alcoholico
         return float(1+self.peso)*self.p_alcoholico(dia_cosechado)/(self.precio*self.dias_lluvia_prom)
@@ -211,6 +190,7 @@ class Lote:
         else: 
             return 1000000000000
             print("entre -.-")
+
 
         
                                 
