@@ -291,12 +291,14 @@ class Vino:
         precio_media: la media del precio del vino 
         precio_dst: desviacion estandar del precio del vino (fracción)
         volumen: volumen demandado por el vino
+        precio_2desv: precio - 2 desviaciones estandar
         """
         self.tipo = tipo 
         self.precio_dstbn = precio_dstbn 
         self.precio_media = precio_media
         self.precio_dst = precio_dst 
         self.volumen = volumen
+        self.precio_2desv = precio_media - 2 * (precio_dst * precio_media)
 
 class Receta:
     def __init__(self, tipo_vino, id_receta, J1, J2, J3, J4, J5, J6, J7, J8):
