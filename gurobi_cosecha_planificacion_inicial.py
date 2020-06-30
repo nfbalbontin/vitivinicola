@@ -76,7 +76,7 @@ demanda_e= vinos["E"].volumen * transformar_vol_kg / porcentaje_post_merma
 
 # Función Objetivo
 m.setObjective((vinos["A"].precio_2desv * t["A"] + vinos["B"].precio_2desv * t["B"] + vinos["C"].precio_2desv * t["C"] + vinos["D"].precio_2desv * t["D"] + vinos["E"].precio_2desv * t["E"]
-    - sum(lotes[l].precio * lotes[l].tn * 1000 * x[l, d] for l in L for d in D)) - sum(lotes[l].calcular_costo(d) * x[l, d] for l in L for d in D), GRB.MAXIMIZE)
+    - sum(lotes[l].precio * lotes[l].tn * 1000 * x[l, d] for l in L for d in D)) - sum(lotes[l].calcular_costo_opt(d) * x[l, d] for l in L for d in D), GRB.MAXIMIZE)
 
 
 # Restricciones
