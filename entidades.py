@@ -48,7 +48,7 @@ class Simulacion:
         return lotes 
 
 class Lote:
-    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio, t_hasta_ferm, nu, dias_lluvia_prom, brix):
+    def __init__(self, codigo, tipo_u, tn, opt, p_01, p_11, dist, precio, t_hasta_ferm, nu, dias_lluvia_prom, brix, a7,a6,a5,a4,a3,a2,a1,a0,d1,d2,d3,d4,d5,d6,d7):
         """ 
         codigo: codigo de lote 
         tipo_u: tipo de uva que genera el lote
@@ -77,6 +77,8 @@ class Lote:
         self.dias_lluvia = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.lluvias = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.peso = self.prom_peso_recetas()
+        self.lluvia_dias={'a7': a7, 'a6': a6, 'a5': a5, 'a4': a4,'a3': a3,'a2': a2,'a1': a1,'a0': a0,'d1': d1,'d2': d2,
+                          'd3': d3,'d4': d4,'d5': d5,'d6': d6,'d7': d7}
 
     def evento_lluvia(self, rango):
         eventos= [1, 0]
@@ -96,7 +98,7 @@ class Lote:
                 self.lluvias[rango + 7] = 1
             for dia in self.lluvias[0:rango + 7]:
                 self.dias_lluvia[rango + 7] += dia
-                
+
     def calidad_precio(self, dia_cosechado): 
         # self.prom_peso_recetas*self.p_alcoholico
         return float(1+self.peso)*self.p_alcoholico(dia_cosechado)/(self.precio*self.dias_lluvia_prom)
@@ -150,7 +152,44 @@ class Lote:
             return -17*((rango**2)/9800) + rango/280 + 1 
         else: 
             return 0.00000000001
-
+    def calcular_costo_opt(self, dia):
+        rango = dia - self.opt
+        if dia == self.opt -7:
+            llovio = self.lluvia_dias['a7']
+        elif dia == self.opt -6:
+            llovio = self.lluvia_dias['a6']
+        elif dia == self.opt -5:
+            llovio = self.lluvia_dias['a5']
+        elif dia == self.opt -4:
+            llovio = self.lluvia_dias['a4']
+        elif dia == self.opt -3:
+            llovio = self.lluvia_dias['a3']
+        elif dia == self.opt -2:
+            llovio = self.lluvia_dias['a2']
+        elif dia == self.opt -1:
+            llovio = self.lluvia_dias['a1']
+        elif dia == self.opt :
+            llovio = self.lluvia_dias['a0']
+        elif dia == self.opt +1:
+            llovio = self.lluvia_dias['d1']
+        elif dia == self.opt +2:
+            llovio = self.lluvia_dias['d2']
+        elif dia == self.opt +3:
+            llovio = self.lluvia_dias['d3']            
+        elif dia == self.opt +4:
+            llovio = self.lluvia_dias['d4']
+        elif dia == self.opt +5:
+            llovio = self.lluvia_dias['d5']
+        elif dia == self.opt +6:
+            llovio = self.lluvia_dias['d6']
+        elif dia == self.opt +7:
+            llovio = self.lluvia_dias['d7']            
+        else:
+            llovio = 100000
+        calidad = self.calidad_max(rango)-llovio*0.1 - (1 - math.exp(-self.tiempo/self.nu))
+        costo= abs((self.precio/calidad) - self.precio)* self.tn*1000
+        return costo
+    """
     def calcular_costo(self, dia):
         # LLueve = 1, No LLueve = 0
         eventos= [1, 0]
@@ -176,22 +215,12 @@ class Lote:
                 llovio += self.lluvias[i]
             calidad = self.calidad_max(rango)-llovio*0.1 - (1 - math.exp(-self.tiempo/self.nu))
             costo= abs((self.precio/calidad) - self.precio)* self.tn*1000
-            """
-            print("LOTE: {}\n".format(self.codigo))
-            print("DIA: {}\n".format(dia))
-            print("RANGO: {}".format(rango))
-            print("CALIDAD MAX: {}\n".format(self.calidad_max(rango)))
-            print("PERDIDA DE CALIDAD: {}".format(1-math.exp(-self.tiempo/self.nu)))
-            print("LLUVIAS: {}".format(llovio))
-            print("CALIDAD TOTAL: {}".format(self.calidad_max(rango)-llovio*0.1 - (1-math.exp(-self.tiempo/self.nu))))
-            print("COSTO: {}".format(costo))
-            """
             return costo
         else: 
             return 1000000000000
             print("entre -.-")
 
-
+    """
         
                                 
 class Procesamiento: 
