@@ -51,10 +51,8 @@ t = m.addVars(V, vtype=GRB.CONTINUOUS, name="t_v")
 
 # Parámetros
 M = 1000000000000000  # número muy grande
-
-transformar_vol_kg = 1250
-porcentaje_post_merma = 0.498 # total
-porcentaje_post_merma_2 = 0.52  # hasta clarificación
+porcentaje_post_merma = 0.57 # total 
+porcentaje_post_merma_2 = 0.6 # hasta clarificación
 y_max = (12000) * 13  # capacidad máxima de fábrica en un día debido a cuellos de botella (13 horas de producción)
 
 relacion = {}  # 1 ssi la uva j esta en el lote l, 0 en otro caso.
@@ -67,18 +65,16 @@ for uva in uvas:
 
 
 # Lo que se necesita comprar de uva en kg para que después de las perdidas de procesamiento quede la demanda de cada vino
-demanda_a= vinos["A"].volumen * transformar_vol_kg / porcentaje_post_merma
-demanda_b= vinos["B"].volumen * transformar_vol_kg / porcentaje_post_merma
-demanda_c= vinos["C"].volumen * transformar_vol_kg / porcentaje_post_merma
-demanda_d= vinos["D"].volumen * transformar_vol_kg / porcentaje_post_merma
-demanda_e= vinos["E"].volumen * transformar_vol_kg / porcentaje_post_merma
+demanda_a= vinos["A"].volumen / porcentaje_post_merma
+demanda_b= vinos["B"].volumen / porcentaje_post_merma
+demanda_c= vinos["C"].volumen / porcentaje_post_merma
+demanda_d= vinos["D"].volumen / porcentaje_post_merma
+demanda_e= vinos["E"].volumen / porcentaje_post_merma
 
 
 # Función Objetivo
 m.setObjective((vinos["A"].precio_2desv * t["A"] + vinos["B"].precio_2desv * t["B"] + vinos["C"].precio_2desv * t["C"] + vinos["D"].precio_2desv * t["D"] + vinos["E"].precio_2desv * t["E"]
     - sum(lotes[l].precio * lotes[l].tn * 1000 * x[l, d] for l in L for d in D)) - sum(lotes[l].calcular_costo_opt(d) * x[l, d] for l in L for d in D), GRB.MAXIMIZE)
-
-
 # Restricciones
 # Definición variable w
 m.addConstrs(x[l, d] * lotes[l].tn * 1000 * relacion[j, l] == w[j, l, d]for j in J for l in L for d in D)
@@ -112,7 +108,7 @@ m.addConstrs(b[v, r] * M >= y[j, l, r , v] for j in J for r in R for v in V for 
 for l in lotes:
     for d in D:
         if d not in range(lotes[l].opt-7,lotes[l].opt + 8):
-          m.addConstr(x[l, d] == 0)
+          m.addConstr(x[l, d] == 0) 
         elif lotes[l].p_alcoholico(d) < 13:
         # No se pueden cosechar lotes con potencial alcohólico menor que 12
           m.addConstr(x[l, d] == 0)
