@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "C:\\Users\\Carolina Stuardo\\.virtualenvs\\Carolina_Stuardo-1CbiOf-F\\Scripts\\python.exe",
+    "python.pythonPath": "C:\\Users\\Carolina Stuardo\\AppData\\Local\\Programs\\Python\\Python36",
     "python.linting.pylintEnabled": false,
     "python.linting.pycodestyleEnabled": true,
     "python.linting.enabled": false,
