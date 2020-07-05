@@ -51,10 +51,8 @@ t = m.addVars(V, vtype=GRB.CONTINUOUS, name="t_v")
 
 # Parámetros
 M = 1000000000000000  # número muy grande
-
-transformar_vol_kg = 1250
-porcentaje_post_merma = 0.498 # total
-porcentaje_post_merma_2 = 0.52  # hasta clarificación
+porcentaje_post_merma = 0.57 # total 
+porcentaje_post_merma_2 = 0.6 # hasta clarificación
 y_max = (12000) * 13  # capacidad máxima de fábrica en un día debido a cuellos de botella (13 horas de producción)
 
 relacion = {}  # 1 ssi la uva j esta en el lote l, 0 en otro caso.
@@ -67,18 +65,16 @@ for uva in uvas:
 
 
 # Lo que se necesita comprar de uva en kg para que después de las perdidas de procesamiento quede la demanda de cada vino
-demanda_a= vinos["A"].volumen * transformar_vol_kg / porcentaje_post_merma
-demanda_b= vinos["B"].volumen * transformar_vol_kg / porcentaje_post_merma
-demanda_c= vinos["C"].volumen * transformar_vol_kg / porcentaje_post_merma
-demanda_d= vinos["D"].volumen * transformar_vol_kg / porcentaje_post_merma
-demanda_e= vinos["E"].volumen * transformar_vol_kg / porcentaje_post_merma
+demanda_a= vinos["A"].volumen / porcentaje_post_merma
+demanda_b= vinos["B"].volumen / porcentaje_post_merma
+demanda_c= vinos["C"].volumen / porcentaje_post_merma
+demanda_d= vinos["D"].volumen / porcentaje_post_merma
+demanda_e= vinos["E"].volumen / porcentaje_post_merma
 
 
 # Función Objetivo
 m.setObjective((vinos["A"].precio_2desv * t["A"] + vinos["B"].precio_2desv * t["B"] + vinos["C"].precio_2desv * t["C"] + vinos["D"].precio_2desv * t["D"] + vinos["E"].precio_2desv * t["E"]
-    - sum(lotes[l].precio * lotes[l].tn * 1000 * x[l, d] for l in L for d in D)) - sum(lotes[l].calcular_costo(d) * x[l, d] for l in L for d in D), GRB.MAXIMIZE)
-
-
+    - sum(lotes[l].precio * lotes[l].tn * 1000 * x[l, d] for l in L for d in D)) - sum(lotes[l].calcular_costo_opt(d) * x[l, d] for l in L for d in D), GRB.MAXIMIZE)
 # Restricciones
 # Definición variable w
 m.addConstrs(x[l, d] * lotes[l].tn * 1000 * relacion[j, l] == w[j, l, d]for j in J for l in L for d in D)
@@ -112,13 +108,11 @@ m.addConstrs(b[v, r] * M >= y[j, l, r , v] for j in J for r in R for v in V for 
 for l in lotes:
     for d in D:
         if d not in range(lotes[l].opt-7,lotes[l].opt + 8):
-            m.addConstr(x[l, d] == 0)
+          m.addConstr(x[l, d] == 0) 
+        elif lotes[l].p_alcoholico(d) < 13:
+        # No se pueden cosechar lotes con potencial alcohólico menor que 12
+          m.addConstr(x[l, d] == 0)
 
-# No se pueden cosechar lotes con potencial alcohólico menor que 12
-for l in lotes:
-  for d in D:
-    if lotes[l].p_alcoholico(d) < 12:
-      m.addConstr(x[l, d] == 0)
 
 # Máximo se compran uvas para producir la demanda de cada vino
 m.addConstr(t["A"] <= demanda_a)
@@ -224,7 +218,7 @@ m.optimize()
 print(f"Obj: {m.objVal}")
 
 
-def generate_dicts(type_dict, vars):
+def generate_dicts(type_dict, vars, lotes=False):
   var_dict = {}
   for v in vars:
     if round(v.x) != 0 and 'x_ld' in v.varName and type_dict == 'lotes':
@@ -240,9 +234,9 @@ def generate_dicts(type_dict, vars):
       cant_receta = re.search("(?<=\[)(.*)(?=\])", v.varName).group()
       uva_lote_receta_vino = cant_receta.split(',')
       if 'cantidad_x_receta' in var_dict[uva_lote_receta_vino[1]]:
-        var_dict[uva_lote_receta_vino[1]]['cantidad_x_receta'][uva_lote_receta_vino[2]] = int(v.X)
+        var_dict[uva_lote_receta_vino[1]]['cantidad_x_receta'][uva_lote_receta_vino[2]] = int(v.X)*porcentaje_post_merma_2
       else: 
-        var_dict[uva_lote_receta_vino[1]]['cantidad_x_receta'] = {uva_lote_receta_vino[2]: int(v.X)}
+        var_dict[uva_lote_receta_vino[1]]['cantidad_x_receta'] = {uva_lote_receta_vino[2]: int(v.X)*porcentaje_post_merma_2}
     if round(v.x) != 0 and 'b_vr' in v.varName and type_dict == 'recetas': 
         cant_vino_r = re.search("(?<=\[)(.*)(?=\])", v.varName).group()
         vino_receta = cant_vino_r.split(',')
@@ -251,6 +245,15 @@ def generate_dicts(type_dict, vars):
         cant_vino = re.search("(?<=\[)(.*)(?=\])", v.varName).group()
         vino_receta = cant_vino.split(',')
         var_dict[vino_receta[0]] = int(v.X)
+  if type_dict == 'lotes':
+    for l in var_dict: 
+      var_dict[l]['costo'] = lotes[l].precio*lotes[l].tn
+      var_dict[l]['dia_opt'] = lotes[l].opt
+      int_value = int(var_dict[l]['dia_c'])
+      rango = int_value - lotes[l].opt
+      var_dict[l]['dias_lluvia'] = 0
+      for i in range(rango + 7):
+        var_dict[l]['dias_lluvia'] += lotes[l].lluvias[i]
   return var_dict
 
 def gen_excel_lotes(l_dict):
@@ -274,7 +277,7 @@ def gen_excel(v_type, t_dict):
   df = pd.DataFrame(resultados, columns = [v_type, 'Cantidad'])
   df.to_excel('docs/resultados_{}.xlsx'.format(v_type), sheet_name="resultados_{}".format(v_type))  
 
-var_dict = generate_dicts('lotes', m.getVars())
+var_dict = generate_dicts('lotes', m.getVars(), lotes)
 rep_dict = generate_dicts('recetas', m.getVars())
 vino_dict = generate_dicts('vinos', m.getVars())
 
