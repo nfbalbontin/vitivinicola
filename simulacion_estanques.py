@@ -20,7 +20,7 @@ def open_dicts(path):
 def gen_posibles_estanques():
   values = {}
   valores = {}
-  est = {'20': ['T1',1], '10': ['T2',2], '15': ['T3', 3]}
+  est = {'25': ['T1',1], '15': ['T2',2], '20': ['T3', 3]}
   for i in est: 
     values[i] = [[est[i][0]]]
     valores[i] = [[est[i][1] + 1]]
@@ -163,11 +163,11 @@ for dia in D:
               cantidad[tipo] += 1
         for can in cantidad: 
           if can == 'T1': 
-            lote_dict[l]['producido'] += cantidad[can]*20
+            lote_dict[l]['producido'] += cantidad[can]*25
           elif can == 'T2': 
-            lote_dict[l]['producido'] += cantidad[can]*10
-          else: 
             lote_dict[l]['producido'] += cantidad[can]*15
+          else: 
+            lote_dict[l]['producido'] += cantidad[can]*20
         lote_dict[l]['estanques'] = cantidad
 
 def ponderar_lotes():
@@ -175,7 +175,7 @@ def ponderar_lotes():
     lote_dict[l]['p_alcoholico'] = 0
     if lote_dict[l]['producido'] != 0: 
       # Capacidad estanque | Tiempo hasta fermentar | ponderador | p_alcoholico
-      ponderadores = {'T1': [20, 20/6.2985, 0, 0], 'T2': [10, 10/6.2985, 0, 0], 'T3': [15, 15/6.2985, 0, 0]}
+      ponderadores = {'T1': [25, 20/6.2985, 0, 0], 'T2': [15, 10/6.2985, 0, 0], 'T3': [20, 15/6.2985, 0, 0]}
       for e in lote_dict[l]['estanques']: 
         ponderadores[e][2] = (lote_dict[l]['estanques'][e]*ponderadores[e][0])/lote_dict[l]['producido']
         #print("ESTANQUES {}".format(lote_dict[l]['estanques']))
@@ -193,20 +193,24 @@ def ponderar_lotes():
         lote_dict[l]['p_alcoholico'] += ponderadores[pon2][2]*ponderadores[pon2][3] 
     cantidad = lote_dict[l]['cantidad']
     lote_dict[l]['cantidad_x_receta_estanques'] = {}
+    lote_dict[l]['costo_x_receta'] = {}
     for rec in lote_dict[l]['cantidad_x_receta']: 
+      lote_dict[l]['costo_x_receta'][rec] = (lote_dict[l]['cantidad_x_receta'][rec]/cantidad)*lote_dict[l]['costo']
       lote_dict[l]['cantidad_x_receta_estanques'][rec] = (lote_dict[l]['cantidad_x_receta'][rec]/cantidad)*lote_dict[l]['producido']
   return lote_dict
 
 def gen_excel_lotes(l_dict):
   resultados_lotes = []
   for var in l_dict:
-    recetas = {'A1': 7, 'A2': 8, 'B1': 9, 'B2': 10, 'B3': 11, 'C1': 12, 'D1': 13, 'D2': 14, 'E1': 15, 'E2': 16}
-    resultado = [var, l_dict[var]['dia_opt'], l_dict[var]['dia_c'], l_dict[var]['cantidad'], l_dict[var]['producido'], l_dict[var]['dias_lluvia'], l_dict[var]['p_alcoholico'] , l_dict[var]['costo'], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    for receta in l_dict[var]['cantidad_x_receta']: 
-      resultado[recetas[receta]] = l_dict[var]['cantidad_x_receta'][receta]
+    recetas = {'A1': 8, 'A2': 9, 'B1': 10, 'B2': 11, 'B3': 12, 'C1': 13, 'D1': 14, 'D2': 15, 'E1': 16, 'E2': 17}
+    resultado = [var, l_dict[var]['dia_opt'], l_dict[var]['dia_c'], int(l_dict[var]['cantidad'])/1250, l_dict[var]['producido'], l_dict[var]['dias_lluvia'], l_dict[var]['p_alcoholico'] , l_dict[var]['costo'], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    for receta in l_dict[var]['cantidad_x_receta_estanques']: 
+      resultado[recetas[receta]] = l_dict[var]['cantidad_x_receta_estanques'][receta]
+    for receta in l_dict[var]['costo_x_receta']: 
+      resultado[recetas[receta]+10] = l_dict[var]['costo_x_receta'][receta]
     resultados_lotes.append(resultado)
   resultados_lotes.sort(key=lambda x: x[2])
-  lotes_df = pd.DataFrame(resultados_lotes, columns = ['Lote', 'Dia Optimo', 'Dia Cosechado', 'Canitdad a Producir', 'Cantidad Producida', 'Dias Lluvia', 'Potencial Alcoholico', 'Costo', 'A1', 'A2', 'B1', 'B2', 'B3', 'C1', 'D1', 'D2', 'E1', 'E2'])
+  lotes_df = pd.DataFrame(resultados_lotes, columns = ['Lote', 'Dia Optimo', 'Dia Cosechado', 'Canitdad a Producir', 'Cantidad Producida', 'Dias Lluvia', 'Potencial Alcoholico', 'Costo', 'A1', 'A2', 'B1', 'B2', 'B3', 'C1', 'D1', 'D2', 'E1', 'E2', 'CA1', 'CA2', 'CB1', 'CB2', 'CB3', 'CC1', 'CD1', 'CD2', 'CE1', 'CE2'])
   lotes_df.to_excel('docs/resultados_lotes_estanques.xlsx', sheet_name="resultados_lotes")  
 
 def w_dicts(v_dict, name): 
